@@ -1,0 +1,8 @@
+django>=5.0
+pillow
+django-crispy-forms
+crispy-bootstrap5
+requests
+pandas
+matplotlib
+python-dotenv
