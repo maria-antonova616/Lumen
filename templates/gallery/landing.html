@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black pb-12 md:pb-20">
+      <nav class="fixed w-full z-50 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 md:px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-8 h-8 bg-white rounded-full border-2 border-gray-400 shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0">
+             <span class="font-serif font-bold text-black text-xs">L</span>
+          </div>
+          <span class="font-bold tracking-tight text-xl text-white">LUMEN</span>
+        </div>
+        <div class="flex gap-4 items-center">
+          {% if user.is_authenticated %}
+              {% if user.role == 'PHOTOGRAPHER' %}
+                  <a href="{% url 'dashboard' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-white hover:text-gray-300 transition-colors">
+                      Кабинет Фотографа
+                  </a>
+              {% elif user.role == 'CLIENT' %}
+                  <a href="{% url 'client_dashboard' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-white hover:text-gray-300 transition-colors">
+                      Мои Галереи
+                  </a>
+              {% endif %}
+              <form action="{% url 'users:logout' %}" method="post" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-gray-400 hover:text-white transition-colors">Выход</button>
+              </form>
+          {% else %}
+              <a href="{% url 'users:login' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-gray-400 hover:text-white transition-colors">
+                Вход
+              </a>
+              <a href="{% url 'users:signup' %}" class="bg-white text-black px-4 md:px-6 py-2 md:py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                Регистрация
+              </a>
+          {% endif %}
+        </div>
+      </nav>
+      <header class="relative w-full min-h-[100dvh] flex flex-col justify-end p-5 md:p-12 overflow-hidden border-b border-white/10">
+        <div 
+          class="absolute inset-0 z-0 bg-cover bg-center opacity-50 grayscale transition-opacity duration-1000"
+          style="background-image: url('https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2400&auto=format&fit=crop')"
+        ></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent z-0"></div>
+        <div class="relative z-10 max-w-7xl w-full mx-auto pb-16 md:pb-0">
+          <div class="flex flex-col md:flex-row items-end justify-between gap-8 md:gap-12">
+            <div class="w-full">
+              <div class="flex items-center gap-3 mb-4 md:mb-6">
+                 <span class="w-8 md:w-12 h-[1px] bg-white"></span>
+                 <span class="text-white font-mono text-[10px] md:text-xs uppercase tracking-widest">Lumen</span>
+              </div>
+              <h1 class="text-4xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] mb-4 md:mb-6 text-white mix-blend-screen uppercase break-words">
+                Фокус<br/>
+                на Искусстве.
+              </h1>
+              <p class="text-gray-300 max-w-md text-sm md:text-lg leading-relaxed font-light">
+                Платформа для профессионального отбора и управления фотографиями. Оптимизированный рабочий процесс для эффективной работы.
+              </p>
+            </div>
+            <div class="flex flex-col gap-4 w-full md:w-auto">
+              {% if user.is_authenticated %}
+                  {% if user.role == 'PHOTOGRAPHER' %}
+                      <a href="{% url 'dashboard' %}" 
+                  {% elif user.role == 'CLIENT' %}
+                      <a href="{% url 'client_dashboard' %}" 
+                  {% endif %}
+              {% else %}
+                  <a href="{% url 'users:login' %}" 
+              {% endif %}
+                class="group w-full md:w-64 h-14 md:h-16 bg-white text-black flex items-center justify-between px-6 hover:bg-gray-200 transition-all border border-white"
+              >
+                <span class="font-bold uppercase tracking-widest text-xs md:text-sm">Перейти в Галереи</span>
+                <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+      <section class="px-5 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 border-b border-white/10 pb-6 gap-2">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tighter text-white uppercase">Архитектура</h2>
+          <span class="font-mono text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">Обзор возможностей</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4 h-auto md:h-[800px]">
+          <div class="md:col-span-2 row-span-2 relative group overflow-hidden border border-white/10 bg-[#111] min-h-[300px] md:min-h-0">
+            <img 
+              src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop" 
+              class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700 grayscale"
+              alt="Photographer"
+            />
+            <div class="absolute bottom-0 left-0 p-6 md:p-8 w-full bg-gradient-to-t from-black via-black/80 to-transparent">
+              <i data-lucide="camera" class="w-6 h-6 md:w-8 md:h-8 text-white mb-3 md:mb-4"></i>
+              <h3 class="text-2xl md:text-3xl font-bold mb-2 text-white">Полное погружение</h3>
+              <p class="text-gray-300 max-w-md text-xs md:text-sm leading-relaxed">
+                Среда просмотра, достойная ваших работ. Никакого шума, только ваши фотографии через призму цифрового объектива.
+              </p>
+            </div>
+          </div>
+          <div class="bg-[#111] border border-white/10 relative overflow-hidden group hover:border-white transition-colors min-h-[200px]">
+             <img 
+              src="https://images.unsplash.com/photo-1502759683299-cdcd6974244f?q=80&w=800&auto=format&fit=crop" 
+              class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale group-hover:scale-105 transition-transform duration-700" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            <div class="relative z-10 p-6 md:p-8 flex flex-col justify-between h-full">
+                <div class="flex justify-between items-start mb-4">
+                  <i data-lucide="layout-grid" class="text-gray-400 group-hover:text-white transition-colors"></i>
+                  <span class="font-mono text-xs text-gray-500">01</span>
+                </div>
+                <div>
+                  <h4 class="text-lg md:text-xl font-bold mb-2 text-white">Умный Отбор</h4>
+                  <p class="text-xs md:text-sm text-gray-400 leading-relaxed">
+                    Лимиты на выбор. Клиент выбирает только лучшие кадры.
+                  </p>
+                </div>
+            </div>
+          </div>
+          <div class="bg-[#111] border border-white/10 relative overflow-hidden group hover:border-white transition-colors min-h-[200px]">
+             <img 
+              src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?q=80&w=800&auto=format&fit=crop" 
+              class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale group-hover:scale-105 transition-transform duration-700" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            <div class="relative z-10 p-6 md:p-8 flex flex-col justify-between h-full">
+                <div class="flex justify-between items-start mb-4">
+                  <i data-lucide="clock" class="text-gray-400 group-hover:text-white transition-colors"></i>
+                  <span class="font-mono text-xs text-gray-500">02</span>
+                </div>
+                <div>
+                  <h4 class="text-lg md:text-xl font-bold mb-2 text-white">Таймер Доступа</h4>
+                  <p class="text-xs md:text-sm text-gray-400 leading-relaxed">
+                    Таймер на выбор. Создайте срочность.
+                  </p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="px-5 md:px-12 py-8 md:py-12 border-t border-white/10 mt-8 md:mt-12 flex flex-col md:flex-row justify-between items-start md:items-center text-gray-500 text-sm gap-6">
+        <div class="flex flex-col gap-2">
+           <span class="font-bold text-white tracking-widest">LUMEN | Управление Галереями</span>
+           <span>© 2026 Все права защищены.</span>
+        </div>
+        <div class="flex flex-wrap gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase">
+          <a href="#" class="hover:text-white">Конфиденциальность</a>
+          <a href="#" class="hover:text-white">Условия</a>
+          <a href="#" class="hover:text-white">Контакты</a>
+        </div>
+      </footer>
+</div>
+{% endblock %}
