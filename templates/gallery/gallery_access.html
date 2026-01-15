@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <h1 class="font-bold text-lg">Доступ: {{ gallery.title }}</h1>
+        </div>
+    </nav>
+    <main class="p-6 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 gap-8">
+        <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+            <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4">Управление пользователями</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="access_submit" value="1">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 bg-[#1a1a1a]/30 p-3 rounded border border-white/5">
+                        {{ access_form.is_public }}
+                        <label for="{{ access_form.is_public.id_for_label }}" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">Публичный доступ</label>
+                    </div>
+                    <div>
+                         <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Добавить новых пользователей</label>
+                         {% include 'gallery/includes/user_tags_widget.html' with field=access_form.users_data %}
+                    </div>
+                    <button type="submit" class="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200">
+                        Обновить список
+                    </button>
+                </div>
+            </form>
+            <div class="mt-8">
+                <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Текущие участники</h4>
+                <div class="divide-y divide-white/5 border border-white/10 rounded">
+                    {% for access in access_list %}
+                    <div class="p-3 flex justify-between items-center">
+                        <span class="text-sm">{{ access.user.username }} <span class="text-gray-500 text-xs">({{ access.get_role_display }})</span></span>
+                        <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="remove_user_access" value="{{ access.user.id }}">
+                            <button type="submit" class="text-red-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+             <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4">Пригласительные ссылки</h3>
+             <form method="post" class="flex gap-4 items-end mb-6">
+                 {% csrf_token %}
+                 <input type="hidden" name="invite_submit" value="1">
+                 <div class="flex-1">
+                     <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Роль</label>
+                     {{ invite_form.role }}
+                 </div>
+                 <div class="flex-1">
+                     <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Лимит</label>
+                     {{ invite_form.usage_limit }}
+                 </div>
+                 <button type="submit" class="py-2.5 px-4 bg-white text-black text-xs font-bold uppercase tracking-widest mb-0">Создать</button>
+             </form>
+             <div class="divide-y divide-white/5 border border-white/10 rounded">
+                {% for invite in invites %}
+                <div class="p-3 flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white">{{ invite.get_role_display }}</span>
+                        <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'accept_invite' invite.token %}" class="bg-transparent text-[10px] text-gray-500 w-64 border-none p-0" onclick="this.select(); document.execCommand('copy'); showToast('Ссылка скопирована!');">
+                    </div>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="delete_invite" value="{{ invite.id }}"><button type="submit"><i data-lucide="trash-2" class="w-4 h-4 text-gray-500 hover:text-red-500"></i></button></form>
+                </div>
+                {% endfor %}
+             </div>
+        </div>
+    </main>
+</div>
+<script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast("{{ message }}", "{{ message.tags }}" === "error");
+            {% endfor %}
+        {% endif %}
+    });
+</script>
+{% endblock %}
