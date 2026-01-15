@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load gallery_extras %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="relative h-[100dvh] bg-[#0a0a0a] flex flex-col overflow-hidden font-sans text-white">
+      <header class="z-30 h-16 md:h-20 bg-[#111] border-b border-[#222] shadow-xl flex items-center justify-between px-4 md:px-8 select-none relative shrink-0">
+        <div class="flex items-center gap-4 md:gap-6 relative z-10">
+          <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-gray-200">
+             <span class="font-serif font-bold text-black text-[10px] italic tracking-tighter transform -rotate-12">L</span>
+          </div>
+          <div class="flex flex-col justify-center">
+            <h1 class="text-white text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase truncate max-w-[120px] md:max-w-none">{{ gallery.title }}</h1>
+            <span class="text-[9px] md:text-[10px] text-gray-500 font-mono uppercase mt-0.5">
+                {% if is_owner %}РЕЖИМ АВТОРА{% else %}{{ role_name }}{% endif %}
+                {% if gallery.is_common_likes %}<span class="text-green-500 ml-2">• ОБЩИЕ ЛАЙКИ</span>{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 md:gap-6 relative z-10">
+            {% if is_owner %}
+                <form id="upload-form" action="{% url 'gallery_upload' gallery.photographer.id gallery.id %}" method="post" enctype="multipart/form-data" class="flex items-center">
+                    {% csrf_token %}
+                    <label for="file-upload-input" class="cursor-pointer group flex items-center gap-2 bg-white text-black px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                        <i data-lucide="upload-cloud" class="w-3 h-3"></i><span class="hidden md:inline">Добавить фото</span>
+                    </label>
+                    <input id="file-upload-input" type="file" name="images" multiple class="hidden">
+                </form>
+            {% endif %}
+            {% if can_like or is_owner %}
+            <div class="flex flex-col items-end">
+                 <div class="bg-[#050505] w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#333] shadow-inner flex items-center justify-center relative">
+                    <span id="header-liked-count" class="font-mono text-base md:text-lg font-bold text-gray-300">{{ liked_count }}</span>
+                    {% if not is_owner %}<div class="absolute -bottom-4 text-[8px] text-gray-500 font-mono">MAX {{ gallery.max_selection_count }}</div>{% endif %}
+                 </div>
+            </div>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center border border-white/10 hover:bg-white hover:text-black transition-colors"><i data-lucide="layout-grid" class="w-4 h-4"></i></a>
+        </div>
+      </header>
+      {% if can_like or is_owner %}
+      <div class="w-full bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#222] z-20 flex flex-col shrink-0">
+            <div class="flex items-center px-4 md:px-6 h-14 gap-2">
+                 <a href="?filter=ALL" class="text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded border transition-all {% if view_filter == 'ALL' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">Все фото</a>
+                 <a href="?filter=LIKED" class="text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded border transition-all flex items-center gap-2 {% if view_filter == 'LIKED' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">
+                    <i data-lucide="heart" class="w-3 h-3 {% if view_filter == 'LIKED' %}fill-black{% endif %}"></i> Выбранные
+                 </a>
+            </div>
+            {% if is_owner and view_filter == 'LIKED' %}
+            <div class="flex items-center px-4 md:px-6 pb-3 gap-2 overflow-x-auto custom-scrollbar">
+                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mr-2 shrink-0">Клиент:</span>
+                <a href="?filter=LIKED" class="whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all {% if not current_client_id %}bg-[#222] text-white border-white{% else %}bg-transparent text-gray-500 border-[#333] hover:border-gray-500{% endif %}">Все</a>
+                {% for client in clients_with_likes %}
+                <a href="?filter=LIKED&client_id={{ client.id }}" class="whitespace-nowrap text-[10px] font-bold px-3 py-1 rounded-full border transition-all flex items-center gap-2 {% if current_client_id == client.id %}bg-[#222] text-white border-white{% else %}bg-transparent text-gray-500 border-[#333] hover:border-gray-500{% endif %}"><div class="w-2 h-2 rounded-full bg-green-500"></div>{{ client.username }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+      </div>
+      {% endif %}
+      <main class="flex-1 relative bg-[#0a0a0a] overflow-hidden p-2 md:p-6">
+        <div class="w-full h-full relative bg-[#050505] rounded-lg overflow-hidden border border-[#222] flex flex-col">
+           <div class="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-6">
+               <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
+                   {% for photo in photos %}
+                       {% with state=photo_states|get_item:photo.id %}
+                       <div 
+                           data-id="{{ photo.id }}" 
+                           class="relative group aspect-[3/2] bg-[#111] cursor-pointer overflow-hidden border transition-all duration-300 {% if state.liked_by_me %}border-white ring-1 ring-white{% else %}border-[#222] hover:border-gray-500{% endif %}"
+                       >
+                           <img 
+                               src="{% if photo.thumbnail %}{{ photo.thumbnail.url }}{% else %}{{ photo.image.url }}{% endif %}" 
+                               class="w-full h-full object-cover transition-transform duration-500 {% if is_owner %}group-hover:scale-105{% endif %}" 
+                               loading="lazy"
+                               onclick="openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}', {% if state.liked_by_me %}true{% else %}false{% endif %})"
+                           />
+                           {% if is_owner %}
+                           <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                               <form action="{% url 'photo_delete' photo.id %}" method="post" onsubmit="return confirm('Удалить фото безвозвратно?');">{% csrf_token %}
+                                   <button type="submit" class="bg-red-600 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-red-500 shadow-md"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                               </form>
+                           </div>
+                           <div class="absolute top-0 left-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                               <span class="bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm">Drag</span>
+                           </div>
+                           {% endif %}
+                           {% if can_like %}
+                           <div class="absolute bottom-2 right-2 z-20">
+                                <button 
+                                    id="grid-btn-{{ photo.id }}"
+                                    onclick="toggleLike(event, '{{ photo.id }}')"
+                                    class="flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all shadow-lg border backdrop-blur-sm
+                                    {% if state.liked_by_me %}
+                                        bg-white text-black border-white
+                                    {% else %}
+                                        bg-black/50 text-white border-white/20 hover:bg-black/80
+                                        {% if not state.show_count %}opacity-0 group-hover:opacity-100{% endif %}
+                                    {% endif %}"
+                                >
+                                    <i data-lucide="heart" class="w-3 h-3" {% if state.liked_by_me %}fill="currentColor"{% else %}fill="none"{% endif %}></i>
+                                    <span class="text-[9px] font-bold font-mono {% if not state.show_count %}hidden{% endif %}">
+                                        {{ state.total_likes }}
+                                    </span>
+                                </button>
+                           </div>
+                           {% endif %}
+                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2 pointer-events-none"><span class="text-[10px] font-mono text-gray-400 group-hover:text-white transition-colors">#{{ photo.sequence_number }}</span></div>
+                       </div>
+                       {% endwith %}
+                   {% empty %}
+                       <div class="col-span-full h-64 flex flex-col items-center justify-center text-gray-500 gap-4"><i data-lucide="image" class="w-12 h-12 opacity-20"></i><p class="text-xs uppercase tracking-widest">{% if view_filter == 'LIKED' %}В этой категории нет фото{% else %}Галерея пуста{% endif %}</p></div>
+                   {% endfor %}
+               </div>
+               <div class="h-12 md:h-0"></div>
+           </div>
+        </div>
+      </main>
+      <div id="modal" class="hidden fixed inset-0 z-50 bg-black flex flex-col md:flex-row">
+            <div class="flex-1 relative bg-black flex items-center justify-center p-2 md:p-8" onclick="closeModal()">
+                 <button class="absolute top-6 left-6 text-white z-50" onclick="closeModal(); event.stopPropagation();"><div class="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase tracking-widest">Назад</span></div></button>
+                <img id="modal-img" src="" class="max-w-full max-h-full object-contain shadow-2xl" onclick="event.stopPropagation();">
+            </div>
+            {% if can_like %}
+            <div class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-6 flex flex-col justify-center shrink-0">
+                <button id="modal-like-btn" onclick="toggleLike(event, currentPhotoId)" class="w-full py-4 border border-white/20 text-white font-bold uppercase tracking-widest flex justify-center gap-2 transition-all hover:bg-white/5"><i id="modal-like-icon" data-lucide="heart"></i> <span id="modal-like-text">Лайк</span></button>
+            </div>
+            {% endif %}
+      </div>
+      <div id="upload-overlay" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+        <h3 class="text-xl font-bold text-white tracking-widest uppercase animate-pulse">Загрузка...</h3>
+      </div>
+</div>
+<script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        const fileInput = document.getElementById('file-upload-input');
+        const uploadForm = document.getElementById('upload-form');
+        if (fileInput && uploadForm) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    document.getElementById('upload-overlay').classList.remove('hidden');
+                    document.getElementById('upload-overlay').classList.add('flex');
+                    uploadForm.submit();
+                }
+            });
+        }
+        {% if messages %} {% for message in messages %} showToast("{{ message }}", "{{ message.tags }}" === "error"); {% endfor %} {% endif %}
+    });
+    {% if is_owner %}
+    const grid = document.getElementById('photo-grid');
+    if (grid) {
+        new Sortable(grid, {
+            animation: 150, ghostClass: 'opacity-50', delay: 100, delayOnTouchOnly: true,
+            onEnd: function() {
+                const order = Array.from(grid.children).map(el => el.getAttribute('data-id'));
+                fetch('{% url "reorder_photos_api" %}', { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}, body: JSON.stringify({order: order}) });
+            }
+        });
+    }
+    {% endif %}
+    let currentPhotoId = null;
+    const canLike = {{ can_like|yesno:"true,false" }}; 
+    const csrfToken = '{{ csrf_token }}';
+    function openModal(id, url, seq, isLiked) {
+        currentPhotoId = id;
+        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('modal-img').src = url;
+        if(canLike) updateButtonVisuals('modal-like-btn', isLiked);
+        fetch(`/api/track_view/${id}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} });
+    }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); currentPhotoId = null; }
+    function updateButtonVisuals(btnId, isLiked, count=null, showCount=false) {
+        const btn = document.getElementById(btnId);
+        if(!btn) return;
+        const icon = btn.querySelector('svg') || btn.querySelector('i');
+        const textSpan = btn.querySelector('span');
+        if(isLiked) {
+            btn.classList.remove('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-black/80', 'opacity-0', 'group-hover:opacity-100');
+            btn.classList.add('bg-white', 'text-black', 'border-white');
+            if(icon) icon.setAttribute('fill', 'currentColor');
+            if(btnId.startsWith('modal') && textSpan) textSpan.textContent = "Выбрано";
+        } else {
+            btn.classList.remove('bg-white', 'text-black', 'border-white');
+            btn.classList.add('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-black/80');
+            if(icon) icon.setAttribute('fill', 'none');
+            if(!btnId.startsWith('modal')) {
+                if(!showCount) { btn.classList.add('opacity-0', 'group-hover:opacity-100'); } 
+                else { btn.classList.remove('opacity-0', 'group-hover:opacity-100'); }
+            }
+            if(btnId.startsWith('modal') && textSpan) textSpan.textContent = "Лайк";
+        }
+        if(!btnId.startsWith('modal') && textSpan) {
+            if(showCount && count > 0) { textSpan.textContent = count; textSpan.classList.remove('hidden'); } 
+            else { textSpan.classList.add('hidden'); }
+        }
+    }
+    function toggleLike(event, photoId) {
+        if(event) event.stopPropagation();
+        if(!photoId) return;
+        fetch(`/api/like/${photoId}/`, {
+            method: 'POST', headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
+        }).then(res => res.json()).then(data => {
+            if(data.error) {
+                let msg = data.error;
+                if (data.error === 'Personal limit reached') msg = 'Личный лимит исчерпан!';
+                else if (data.error === 'Total limit reached') msg = 'Общий лимит галереи исчерпан!';
+                showToast(msg, true);
+            } else {
+                const canSeeOthers = data.can_see_others;
+                const showCount = canSeeOthers && data.photo_total_likes > 0;
+                updateButtonVisuals(`grid-btn-${photoId}`, data.liked, data.photo_total_likes, showCount);
+                if(currentPhotoId === photoId) { updateButtonVisuals('modal-like-btn', data.liked); }
+                const headerCount = document.getElementById('header-liked-count');
+                if(headerCount) headerCount.textContent = data.my_total_count;
+                const card = document.querySelector(`div[data-id="${photoId}"]`);
+                if(card) {
+                    if(data.liked) { card.classList.add('border-white', 'ring-1', 'ring-white'); card.classList.remove('border-[#222]', 'hover:border-gray-500'); } 
+                    else { card.classList.remove('border-white', 'ring-1', 'ring-white'); card.classList.add('border-[#222]', 'hover:border-gray-500'); }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
