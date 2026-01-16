@@ -358,7 +358,11 @@ def toggle_like(request, photo_id):
 @login_required
 def gallery_upload_photos(request, author_id, pk):
     gallery = get_object_or_404(Gallery, pk=pk)
-    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if gallery.photographer != request.user and not request.user.is_superuser:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Forbidden'}, status=403)
+        return HttpResponseForbidden()
+    
     if request.method == 'POST':
         images = request.FILES.getlist('images')
         if images:
@@ -366,6 +370,10 @@ def gallery_upload_photos(request, author_id, pk):
             for i, image in enumerate(images):
                 p = Photo(gallery=gallery, image=image, sequence_number=last_seq + i + 1, status='UNVIEWED')
                 p.save()
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'ok', 'count': len(images)})
+            
             messages.success(request, f'Загружено {len(images)} фото.')
     return redirect('gallery_detail', author_id=author_id, pk=pk)
 @login_required
