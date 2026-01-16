@@ -103,7 +103,11 @@
                                 </button>
                            </div>
                            {% endif %}
-                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2 pointer-events-none"><span class="text-[10px] font-mono text-gray-400 group-hover:text-white transition-colors truncate block">{{ photo.image.name|basename }}</span></div>
+                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2 pointer-events-none">
+                               <span class="text-[10px] font-mono text-gray-400 group-hover:text-white transition-colors truncate block">
+                                   {{ photo.original_filename|default:photo.image.name|basename }}
+                               </span>
+                           </div>
                        </div>
                        {% endwith %}
                    {% empty %}
@@ -335,7 +339,7 @@
     const photoNotes = {
         {% for photo in photos %}
             "{{ photo.id }}": {
-                name: "{{ photo.image.name|basename|escapejs }}",
+                name: "{{ photo.original_filename|default:photo.image.name|basename|escapejs }}",
                 note: "{{ photo.photographer_note|escapejs }}"
             },
         {% endfor %}

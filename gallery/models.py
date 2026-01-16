@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-import uuid
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import uuid, os, shutil
+
 class Gallery(models.Model):
     title = models.CharField(max_length=200, verbose_name="Название")
     photographer = models.ForeignKey(
@@ -66,6 +69,7 @@ class Photo(models.Model):
     sequence_number = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UNVIEWED')
     photographer_note = models.TextField(blank=True, verbose_name="Примечание фотографа")
+    original_filename = models.CharField(max_length=255, blank=True, verbose_name="Оригинальное имя")
 
     class Meta:
         ordering = ['sequence_number']
@@ -85,3 +89,18 @@ class ProcessingStage(models.Model):
     order = models.PositiveIntegerField(default=0)
     class Meta:
         ordering = ['order']
+
+@receiver(post_delete, sender=Photo)
+def delete_photo_files(sender, instance, **kwargs):
+    if instance.image:
+        if os.path.isfile(instance.image.path):
+            os.remove(instance.image.path)
+    if instance.thumbnail:
+        if os.path.isfile(instance.thumbnail.path):
+            os.remove(instance.thumbnail.path)
+
+@receiver(post_delete, sender=Gallery)
+def delete_gallery_folder(sender, instance, **kwargs):
+    # При удалении галереи пытаемся удалить папку, если она пуста или содержит только эти фото
+    # Фото уже удалены сигналом выше, так как Gallery.delete() вызывает CASCADE удаление Photo
+    pass

@@ -168,7 +168,8 @@ def gallery_analytics(request, pk):
             'sequence_number': p.sequence_number,
             'is_liked': p.id in liked_photos_map,
             'comment': all_comments,
-            'filename': os.path.basename(p.image.name)
+            'photographer_note': p.photographer_note,
+            'filename': p.original_filename or os.path.basename(p.image.name)
         })
     # Activity Chart Data (Likes, Views, Comments)
     activity_likes = ClientChoice.objects.filter(cc_filter, is_liked=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
@@ -368,7 +369,13 @@ def gallery_upload_photos(request, author_id, pk):
         if images:
             last_seq = gallery.photos.aggregate(Max('sequence_number'))['sequence_number__max'] or 0
             for i, image in enumerate(images):
-                p = Photo(gallery=gallery, image=image, sequence_number=last_seq + i + 1, status='UNVIEWED')
+                p = Photo(
+                    gallery=gallery, 
+                    image=image, 
+                    original_filename=image.name, # Сохраняем имя
+                    sequence_number=last_seq + i + 1, 
+                    status='UNVIEWED'
+                )
                 p.save()
             
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
