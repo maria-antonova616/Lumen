@@ -40,6 +40,7 @@
     <main class="flex-1 p-6 md:p-8 max-w-[1920px] mx-auto w-full">
         <div id="tab-content-OVERVIEW" class="animate-in fade-in duration-500">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- KPI Funnel -->
                 <div class="lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[320px] flex flex-col relative overflow-hidden">
                     <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Воронка выбора</h3>
                     <div class="relative flex-1 flex items-center justify-center min-h-0 w-full">
@@ -57,6 +58,8 @@
                         <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#333]"></div> Ост.</div>
                     </div>
                 </div>
+
+                <!-- Main Dynamic Chart -->
                 <div class="lg:col-span-3 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[320px] flex flex-col">
                      <div class="flex justify-between items-center mb-4">
                          <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Динамика проекта</h3>
@@ -69,87 +72,141 @@
                         <canvas id="dynamicChart"></canvas>
                      </div>
                 </div>
-                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden">
-                    <div class="p-4 border-b border-white/10 bg-[#111]">
-                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Просмотрели</h3>
+
+                <!-- Recent Comments Widget -->
+                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-white/10 bg-[#111] flex justify-between items-center">
+                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Последние комментарии</h3>
+                        <button onclick="openModalWindow('modal-all-comments')" class="text-[9px] font-bold text-white uppercase hover:underline">Все ({{ all_comments_list.count }})</button>
                     </div>
-                    <div class="p-4 max-h-[300px] overflow-y-auto custom-scrollbar">
-                        <table class="w-full text-left">
-                            <tbody class="text-sm">
-                                {% for access in viewers_list %}
-                                <tr class="border-b border-[#222] last:border-0 hover:bg-[#111]">
-                                    <td class="py-3 font-bold">{{ access.user.username }}</td>
-                                    <td class="py-3 text-right font-mono text-xs text-gray-500">
-                                        {{ access.last_viewed_at|timesince }} назад
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td class="py-4 text-center text-gray-600 text-xs">Нет просмотров</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden">
-                    <div class="p-4 border-b border-white/10 bg-[#111]">
-                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Лайкнули</h3>
-                    </div>
-                    <div class="p-4 max-h-[300px] overflow-y-auto custom-scrollbar">
-                        <table class="w-full text-left">
-                            <tbody class="text-sm">
-                                {% for data in likers_data %}
-                                <tr class="border-b border-[#222] last:border-0 hover:bg-[#111]">
-                                    <td class="py-3 font-bold">{{ data.user.username }}</td>
-                                    <td class="py-3 text-right">
-                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-[#222] text-white text-[10px] font-bold">
-                                            <i data-lucide="heart" class="w-3 h-3 fill-white"></i> {{ data.count }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td class="py-4 text-center text-gray-600 text-xs">Нет лайков</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                        {% for c in all_comments_list|slice:":5" %}
+                        <div class="mb-4 last:mb-0 pb-4 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ c.photo.id }}')">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[10px] font-bold text-white group-hover:text-blue-400 transition-colors uppercase">{{ c.client.username }}</span>
+                                <span class="text-[9px] font-mono text-gray-600">#{{ c.photo.sequence_number }} | {{ c.timestamp|date:"d.m H:i" }}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 italic">"{{ c.comment }}"</p>
+                        </div>
+                        {% empty %}
+                        <div class="py-10 text-center text-gray-600 text-xs uppercase tracking-widest">Нет комментариев</div>
+                        {% endfor %}
                     </div>
                 </div>
-                <div class="lg:col-span-4 bg-[#111] border border-white/10 p-6 rounded-sm flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-1">Ссылка для клиента</h3>
-                        <p class="text-[10px] text-gray-500 font-mono">{{ request.scheme }}://{{ request.get_host }}{% url 'gallery_detail' gallery.photographer.id gallery.id %}</p>
+
+                <!-- Recent Activity Widget -->
+                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-white/10 bg-[#111] flex justify-between items-center">
+                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Лог активности</h3>
+                        <button onclick="openModalWindow('modal-all-activity')" class="text-[9px] font-bold text-white uppercase hover:underline">Полный лог</button>
                     </div>
-                    <button class="flex items-center gap-2 text-xs font-bold bg-white text-black px-4 py-2 rounded hover:bg-gray-200 transition-colors" onclick="copyLink()">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Скопировать
-                    </button>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                        {% for log in activity_log|slice:":10" %}
+                        <div class="flex items-center justify-between py-2 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ log.photo.id }}')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full {% if log.is_liked %}bg-white{% else %}bg-blue-500{% endif %}"></div>
+                                <span class="text-xs text-gray-300 group-hover:text-white transition-colors">
+                                    <span class="font-bold text-white">{{ log.client.username }}</span> 
+                                    {% if log.is_liked %}лайкнул(а){% else %}посмотрел(а){% endif %} 
+                                    фото <span class="font-mono text-[10px]">#{{ log.photo.sequence_number }}</span>
+                                </span>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ log.timestamp|date:"H:i" }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="py-10 text-center text-gray-600 text-xs uppercase tracking-widest">Нет действий</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="modal-all-comments" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-white">Все комментарии галереи</h2>
+                    <button onclick="closeModalWindow('modal-all-comments')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    {% for c in all_comments_list %}
+                    <div class="mb-6 last:mb-0 pb-6 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ c.photo.id }}'); closeModalWindow('modal-all-comments')">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold text-gray-400">{{ c.client.username|first|upper }}</div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-white uppercase tracking-wider group-hover:text-blue-400 transition-colors">{{ c.client.username }}</p>
+                                    <p class="text-[9px] text-gray-600 font-mono">Файл: IMG_{{ c.photo.sequence_number|stringformat:"04d" }}</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ c.timestamp|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <p class="text-sm text-gray-300 italic pl-11">"{{ c.comment }}"</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-all-activity" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-white">Полный лог активности</h2>
+                    <button onclick="closeModalWindow('modal-all-activity')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    <div class="space-y-1">
+                        {% for log in activity_log %}
+                        <div class="flex items-center justify-between py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-all cursor-pointer group" onclick="scrollToPhoto('{{ log.photo.id }}'); closeModalWindow('modal-all-activity')">
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-2 rounded-full {% if log.is_liked %}bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]{% else %}bg-blue-500{% endif %}"></div>
+                                <div class="text-xs">
+                                    <span class="font-bold text-white uppercase tracking-tighter">{{ log.client.username }}</span>
+                                    <span class="text-gray-500">
+                                        {% if log.is_liked %}добавил(а) в избранное{% else %}просмотрел(а) оригинал{% endif %} 
+                                        фото <span class="font-mono font-bold text-gray-300">#{{ log.photo.sequence_number }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ log.timestamp|date:"d.m H:i" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
         <div id="tab-content-PHOTOS" class="hidden animate-in slide-in-from-bottom-2 duration-500">
             <div class="bg-[#0a0a0a] border border-white/10 rounded-sm min-h-[calc(100vh-140px)] flex flex-col">
                 <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-[#111] border-b border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                    <div class="col-span-2">Превью</div>
-                    <div class="col-span-2">Имя</div>
+                    <div class="col-span-1">Превью</div>
+                    <div class="col-span-3">Имя файла</div>
                     <div class="col-span-2">Статус</div>
-                    <div class="col-span-6">Комментарий</div>
+                    <div class="col-span-4">Комментарии / Примечания</div>
+                    <div class="col-span-2 text-right">Действия</div>
                 </div>
                 <div class="overflow-y-auto custom-scrollbar flex-1 max-h-[70vh]">
                     {% for item in photos_data %}
-                    <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[#222] items-center hover:bg-[#0f0f0f] transition-colors">
-                        <div class="col-span-2 h-12 w-20 bg-[#111] overflow-hidden rounded border border-[#333]">
+                    <div data-photo-id="{{ item.id }}" class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[#222] items-center hover:bg-[#0f0f0f] transition-all duration-500">
+                        <div class="col-span-1 h-10 w-16 bg-[#111] overflow-hidden rounded border border-[#333]">
                             <img src="{{ item.thumbnail }}" class="w-full h-full object-cover" loading="lazy">
                         </div>
-                        <div class="col-span-2 font-mono text-sm text-gray-300">{{ item.filename }}</div>
+                        <div class="col-span-3 font-mono text-[11px] text-gray-300 truncate">{{ item.filename }}</div>
                         <div class="col-span-2">
                             {% if item.is_liked %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
-                                    <i data-lucide="heart" class="w-3 h-3 fill-black"></i> Выбрано
+                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white text-black text-[9px] font-bold uppercase tracking-wider">
+                                    <i data-lucide="heart" class="w-2.5 h-2.5 fill-black"></i> Выбрано
                                 </span>
                             {% else %}
-                                <span class="text-gray-600 text-[10px] uppercase tracking-wider">—</span>
+                                <span class="text-gray-600 text-[9px] uppercase tracking-wider">—</span>
                             {% endif %}
                         </div>
-                        <div class="col-span-6 text-sm text-gray-400 italic">
-                            {% if item.comment %}"{{ item.comment }}"{% else %}-{% endif %}
+                        <div class="col-span-4 text-[11px] text-gray-400 italic truncate">
+                            {% if item.comment %}<span class="text-white not-italic font-bold">К:</span> {{ item.comment }}{% endif %}
+                            {% if item.photographer_note %}<br><span class="text-blue-400 not-italic font-bold">П:</span> {{ item.photographer_note }}{% endif %}
+                            {% if not item.comment and not item.photographer_note %}-{% endif %}
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <button onclick="previewPhoto('{{ item.full_url }}', '{{ item.filename }}')" class="text-[9px] font-bold uppercase tracking-widest text-white border border-white/10 px-3 py-1.5 hover:bg-white hover:text-black transition-all">Просмотреть</button>
                         </div>
                     </div>
                     {% empty %}
@@ -160,7 +217,50 @@
         </div>
     </main>
 </div>
+
+<!-- Photo Preview Modal -->
+<div id="preview-modal" class="hidden fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" onclick="closePreview()">
+    <button class="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
+        <i data-lucide="x" class="w-8 h-8"></i>
+    </button>
+    <img id="preview-img" src="" class="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-sm">
+    <p id="preview-caption" class="mt-6 text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]"></p>
+</div>
+
 <script>
+    function previewPhoto(url, name) {
+        document.getElementById('preview-img').src = url;
+        document.getElementById('preview-caption').textContent = name;
+        document.getElementById('preview-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closePreview() {
+        document.getElementById('preview-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    function openModalWindow(id) {
+        document.getElementById(id).classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModalWindow(id) {
+        document.getElementById(id).classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    window.scrollToPhoto = function(photoId) {
+        switchTab('PHOTOS');
+        setTimeout(() => {
+            const photoEl = document.querySelector(`[data-photo-id="${photoId}"]`);
+            if (photoEl) {
+                photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                photoEl.style.outline = '2px solid white';
+                photoEl.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                setTimeout(() => {
+                    photoEl.style.outline = 'none';
+                    photoEl.style.backgroundColor = '';
+                }, 3000);
+            }
+        }, 100);
+    }
     function showToast(message, isError = false) {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -225,33 +325,50 @@
     const dataActivity = {
         type: 'line',
         labels: {{ activity_dates|safe }},
-        dataset: {
-            label: 'Активность',
-            data: {{ activity_counts|safe }},
-            borderColor: '#ffffff',
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            fill: true,
-            tension: 0.4
-        }
+        datasets: [
+            {
+                label: 'Лайки',
+                data: {{ activity_likes|safe }},
+                borderColor: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Просмотры',
+                data: {{ activity_views|safe }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                tension: 0.4
+            },
+            {
+                label: 'Комментарии',
+                data: {{ activity_comments|safe }},
+                borderColor: '#22c55e',
+                backgroundColor: 'transparent',
+                tension: 0.4
+            }
+        ]
     };
     const dataTop = {
         type: 'bar',
         labels: {{ top_labels|safe }},
-        dataset: {
+        datasets: [{
             label: 'Лайки',
             data: {{ top_data|safe }},
-            backgroundColor: '#22c55e',
+            backgroundColor: '#ffffff',
             borderRadius: 4
-        }
+        }]
     };
     function renderDynamicChart(config) {
         if (dynamicChartInstance) dynamicChartInstance.destroy();
         dynamicChartInstance = new Chart(ctxDynamic, {
             type: config.type,
-            data: { labels: config.labels, datasets: [config.dataset] },
+            data: { labels: config.labels, datasets: config.datasets },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: true, labels: { color: '#666', font: { size: 10 } } } },
                 scales: {
                     y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } },
                     x: { grid: { display: false }, ticks: { color: '#666' } }

@@ -1,4 +1,4 @@
-import io, json
+import io, json, os
 import urllib, base64
 import matplotlib.pyplot as plt
 from django.shortcuts import render, get_object_or_404, redirect
@@ -45,17 +45,53 @@ def track_photo_view(request, photo_id):
         choice.save()
     return JsonResponse({'status': 'ok'})
 def landing(request): return render(request, 'gallery/landing.html')
+@require_POST
+@login_required
+def save_photographer_note(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    if photo.gallery.photographer != request.user and not request.user.is_superuser:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    data = json.loads(request.body)
+    note = data.get('note', '').strip()
+    photo.photographer_note = note
+    photo.save()
+    return JsonResponse({'status': 'ok'})
+
+@require_POST
+@login_required
+def save_comment(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    data = json.loads(request.body)
+    comment = data.get('comment', '').strip()
+    choice, created = ClientChoice.objects.get_or_create(photo=photo, client=request.user)
+    choice.comment = comment
+    choice.save()
+    return JsonResponse({'status': 'ok'})
+
+def check_gallery_expiration(gallery):
+    if gallery.is_active and gallery.is_expired:
+        gallery.is_active = False
+        gallery.save()
+    return gallery.is_active
+
 @login_required
 def dashboard(request):
     if request.user.role == CustomUser.Role.CLIENT: return redirect('client_dashboard')
     if request.user.role != CustomUser.Role.PHOTOGRAPHER and not request.user.is_superuser: return HttpResponseForbidden()
+    
+    galleries_qs = Gallery.objects.filter(photographer=request.user)
+    for g in galleries_qs:
+        check_gallery_expiration(g)
+        
     include_author = request.GET.get('include_author') == 'true'
     likes_filter = Q(photos__choice__is_liked=True)
     if not include_author:
         likes_filter &= ~Q(photos__choice__client=request.user)
+    
     galleries = Gallery.objects.filter(photographer=request.user).annotate(
         total_likes_count=Count('photos__choice', filter=likes_filter)
     ).order_by('-created_at')
+    
     total_galleries = galleries.count()
     total_likes_global = sum(g.total_likes_count for g in galleries)
     top_galleries = sorted(galleries, key=lambda x: x.total_likes_count, reverse=True)[:5]
@@ -102,20 +138,49 @@ def gallery_analytics(request, pk):
         likers_data.append({'user': user, 'count': count})
     likers_data.sort(key=lambda x: x['count'], reverse=True)
     liked_photos_map = set(ClientChoice.objects.filter(cc_filter, is_liked=True).values_list('photo_id', flat=True))
-    photos_qs = gallery.photos.all().order_by('sequence_number')
+    import os
+    photos_qs = gallery.photos.all().order_by('sequence_number').prefetch_related('choice__client')
     photos_data = []
     for p in photos_qs:
-        comment_obj = ClientChoice.objects.filter(cc_filter, photo=p).exclude(comment='').order_by('-timestamp').first()
+        choices = p.choice.exclude(comment='')
+        comment_list = [f"{c.client.username}: {c.comment}" for c in choices]
+        all_comments = " | ".join(comment_list)
         photos_data.append({
+            'id': p.id,
             'thumbnail': p.thumbnail.url if p.thumbnail else p.image.url,
+            'full_url': p.image.url,
             'sequence_number': p.sequence_number,
             'is_liked': p.id in liked_photos_map,
-            'comment': comment_obj.comment if comment_obj else None,
-            'filename': f"IMG_{p.sequence_number:04d}"
+            'comment': all_comments,
+            'filename': os.path.basename(p.image.name)
         })
-    activity_qs = ClientChoice.objects.filter(cc_filter, is_liked=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
-    dates = [item['date'] for item in activity_qs]
-    likes_per_day = [item['count'] for item in activity_qs]
+    # Activity Chart Data (Likes, Views, Comments)
+    activity_likes = ClientChoice.objects.filter(cc_filter, is_liked=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    activity_views = ClientChoice.objects.filter(cc_filter, is_viewed=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    activity_comments = ClientChoice.objects.filter(cc_filter).exclude(comment='').annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    
+    # Merge dates for chart
+    all_dates = sorted(list(set(
+        [item['date'] for item in activity_likes] + 
+        [item['date'] for item in activity_views] + 
+        [item['date'] for item in activity_comments]
+    )))
+    
+    def get_count_for_date(qs, date):
+        for item in qs:
+            if item['date'] == date: return item['count']
+        return 0
+
+    chart_likes = [get_count_for_date(activity_likes, d) for d in all_dates]
+    chart_views = [get_count_for_date(activity_views, d) for d in all_dates]
+    chart_comments = [get_count_for_date(activity_comments, d) for d in all_dates]
+
+    # Global Activity Log (Views, Likes, Comments)
+    activity_log = ClientChoice.objects.filter(cc_filter).select_related('client', 'photo').order_by('-timestamp')
+    
+    # Global Comments List
+    all_comments_list = activity_log.exclude(comment='')
+
     top_filter = Q(choice__is_liked=True)
     if not include_author:
         top_filter &= ~Q(choice__client=request.user)
@@ -134,10 +199,14 @@ def gallery_analytics(request, pk):
         'viewers_list': viewers_list,
         'likers_data': likers_data,
         'include_author': include_author,
-        'activity_dates': json.dumps(dates, cls=DjangoJSONEncoder),
-        'activity_counts': json.dumps(likes_per_day),
         'top_labels': json.dumps(top_labels),
         'top_data': json.dumps(top_data),
+        'all_comments_list': all_comments_list,
+        'activity_log': activity_log,
+        'activity_dates': json.dumps(all_dates, cls=DjangoJSONEncoder),
+        'activity_likes': json.dumps(chart_likes),
+        'activity_views': json.dumps(chart_views),
+        'activity_comments': json.dumps(chart_comments),
     }
     return render(request, 'gallery/gallery_analytics.html', context)
 @login_required
@@ -149,6 +218,9 @@ def client_dashboard(request):
 def gallery_detail(request, author_id, pk):
     gallery = get_object_or_404(Gallery, pk=pk)
     if gallery.photographer.id != author_id: return HttpResponseForbidden("Неверная ссылка")
+    
+    check_gallery_expiration(gallery)
+    
     user = request.user
     is_owner = (user == gallery.photographer or user.is_superuser)
     can_view = False
@@ -180,6 +252,9 @@ def gallery_detail(request, author_id, pk):
         my_likes_ids = set(ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values_list('photo_id', flat=True))
     else:
         my_likes_ids = set(ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).values_list('photo_id', flat=True))
+    
+    photos = photos.prefetch_related('choice__client')
+    
     others_likes_map = {}
     if can_see_others:
         counts = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo_id').annotate(count=Count('id'))

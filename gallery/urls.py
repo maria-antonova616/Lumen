@@ -16,5 +16,7 @@ urlpatterns = [
     path('api/reorder_photos/', views.reorder_photos_api, name='reorder_photos_api'),
     path('api/like/<int:photo_id>/', views.toggle_like, name='toggle_like'),
     path('api/track_view/<int:photo_id>/', views.track_photo_view, name='track_photo_view'),
+    path('api/comment/<int:photo_id>/', views.save_comment, name='save_comment'),
+    path('api/note/<int:photo_id>/', views.save_photographer_note, name='save_note'),
     path('invite/<uuid:token>/', views.accept_invite, name='accept_invite'),
 ]

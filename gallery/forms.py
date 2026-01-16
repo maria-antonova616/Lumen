@@ -5,6 +5,11 @@ from users.models import CustomUser
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 class GallerySettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.expires_at:
+            self.initial['expires_at'] = self.instance.expires_at.strftime('%Y-%m-%dT%H:%M')
+
     class Meta:
         model = Gallery
         fields = [
