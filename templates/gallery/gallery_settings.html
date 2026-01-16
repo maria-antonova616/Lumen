@@ -39,7 +39,12 @@
                 <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm">
                     Сохранить
                 </button>
-                <a href="{% url 'dashboard' %}" class="w-full py-3 text-center border border-white/20 text-gray-400 hover:text-white uppercase tracking-widest text-xs hover:bg-white/5 transition-colors">Отмена</a>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{% url 'dashboard' %}" class="py-3 text-center border border-white/20 text-gray-400 hover:text-white uppercase tracking-widest text-[10px] hover:bg-white/5 transition-colors">Отмена</a>
+                    {% if not is_create %}
+                        <a href="{% url 'gallery_delete' gallery.id %}" class="py-3 text-center border border-red-900/50 text-red-500 hover:text-white hover:bg-red-600 uppercase tracking-widest text-[10px] transition-all">Удалить галерею</a>
+                    {% endif %}
+                </div>
             </div>
         </form>
     </div>
