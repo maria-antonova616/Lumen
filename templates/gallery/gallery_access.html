@@ -19,12 +19,21 @@
                 <input type="hidden" name="access_submit" value="1">
                 <div class="space-y-4">
                     <div class="flex items-center gap-3 bg-[#1a1a1a]/30 p-3 rounded border border-white/5">
-                        {{ access_form.is_public }}
-                        <label for="{{ access_form.is_public.id_for_label }}" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">Публичный доступ</label>
+                        <input type="checkbox" name="is_public" id="id_is_public" class="w-5 h-5" {% if access_form.is_public.value %}checked{% endif %} onchange="togglePublicAccess(this)">
+                        <label for="id_is_public" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">Публичный доступ</label>
                     </div>
-                    <div>
-                         <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Добавить новых пользователей</label>
-                         {% include 'gallery/includes/user_tags_widget.html' with field=access_form.users_data %}
+                    <div class="flex flex-col sm:flex-row gap-4">
+                         <div class="flex-1">
+                             <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Добавить новых пользователей</label>
+                             {% include 'gallery/includes/user_tags_widget.html' with field=access_form.users_data %}
+                         </div>
+                         <div class="w-full sm:w-auto">
+                             <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Роль для новых</label>
+                             <select name="new_user_role" class="w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none">
+                                 <option value="CLIENT">Клиент</option>
+                                 <option value="VIEWER" selected>Зритель</option>
+                             </select>
+                         </div>
                     </div>
                     <button type="submit" class="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200">
                         Обновить список
@@ -36,7 +45,13 @@
                 <div class="divide-y divide-white/5 border border-white/10 rounded">
                     {% for access in access_list %}
                     <div class="p-3 flex justify-between items-center">
-                        <span class="text-sm">{{ access.user.username }} <span class="text-gray-500 text-xs">({{ access.get_role_display }})</span></span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm">{{ access.user.username }}</span>
+                            <select onchange="updateRole('{{ access.id }}', this.value)" class="bg-transparent text-[10px] text-gray-400 uppercase font-mono border border-white/10 rounded-sm py-1 px-2 focus:outline-none" id="role-{{ access.id }}">
+                                <option value="CLIENT" {% if access.role == 'CLIENT' %}selected{% endif %}>Клиент</option>
+                                <option value="VIEWER" {% if access.role == 'VIEWER' %}selected{% endif %}>Зритель</option>
+                            </select>
+                        </div>
                         <form method="post" class="inline">
                             {% csrf_token %}
                             <input type="hidden" name="remove_user_access" value="{{ access.user.id }}">
@@ -95,6 +110,76 @@
                 showToast("{{ message }}", "{{ message.tags }}" === "error");
             {% endfor %}
         {% endif %}
+    });
+    
+    const csrfToken = "{{ csrf_token }}";
+
+    function updateRole(accessId, newRole) {
+        fetch(`/api/access/${accessId}/update-role/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ role: newRole })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                showToast('Роль обновлена');
+            } else if (data.error) {
+                showToast(data.error, true);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ошибка при обновлении роли', true);
+        });
+    }
+
+    const accessRolesInitial = {
+        {% for access in access_list %}
+            "{{ access.id }}": "{{ access.role }}",
+        {% endfor %}
+    };
+
+    function togglePublicAccess(checkbox) {
+        const isPublic = checkbox.checked;
+        const roleSelects = document.querySelectorAll('[id^="role-"]');
+        roleSelects.forEach(select => {
+            const accessId = select.id.replace('role-', '');
+            if (isPublic) {
+                select.value = 'CLIENT';
+                select.disabled = true;
+            } else {
+
+                select.value = accessRolesInitial[accessId] || 'VIEWER'; 
+                select.disabled = false;
+            }
+        });
+        
+        const newUserRoleSelect = document.querySelector('select[name="new_user_role"]');
+        const inviteRoleSelect = document.querySelector('select[name="role"]'); 
+
+        if (isPublic) {
+            newUserRoleSelect.value = 'CLIENT';
+            newUserRoleSelect.disabled = true;
+            inviteRoleSelect.value = 'CLIENT';
+            inviteRoleSelect.disabled = true;
+        } else {
+            newUserRoleSelect.value = 'VIEWER'; 
+            newUserRoleSelect.disabled = false;
+            inviteRoleSelect.value = 'VIEWER'; 
+            inviteRoleSelect.disabled = false;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const isPublicCheckbox = document.getElementById('id_is_public');
+
+        if (isPublicCheckbox.checked) {
+            togglePublicAccess(isPublicCheckbox);
+        }
     });
 </script>
 {% endblock %}
