@@ -5,13 +5,13 @@
 <div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
     <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
-          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
           </a>
-          <h1 class="font-bold text-lg">Доступ: {{ gallery.title }}</h1>
+          <h1 class="font-bold text-lg truncate max-w-[180px] sm:max-w-none">Доступ: {{ gallery.title }}</h1>
         </div>
     </nav>
-    <main class="p-6 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 gap-8">
+    <main class="p-4 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 gap-8">
         <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
             <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4">Управление пользователями</h3>
             <form method="post">

@@ -2,18 +2,18 @@
 {% block content %}
 <div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
       <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-4">
           <a href="{% url 'landing' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> На главную
           </a>
           <div class="h-6 w-[1px] bg-white/10"></div>
           <div>
-              <h1 class="font-bold text-lg leading-none tracking-tight">Панель Управления Клиента</h1>
-              <span class="text-[10px] text-gray-500 uppercase tracking-widest">{{ user.username }}</span>
+              <h1 class="font-bold text-lg leading-none tracking-tight truncate max-w-[150px] sm:max-w-none">Панель Управления Клиента</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest hidden sm:block">{{ user.username }}</span>
           </div>
         </div>
       </nav>
-      <main class="flex-1 p-6 md:p-8 max-w-[1920px] mx-auto w-full">
+      <main class="flex-1 p-4 md:p-8 max-w-[1920px] mx-auto w-full">
         <div class="bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden">
             <div class="p-4 border-b border-white/10 bg-[#111]">
                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Список Доступных Галерей</h3>
