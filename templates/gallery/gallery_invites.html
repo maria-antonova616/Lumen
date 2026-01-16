@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight">Доступ и Приглашения</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest">{{ gallery.title }}</span>
+          </div>
+        </div>
+    </nav>
+    <main class="p-6 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-6">
+            <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+                <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i data-lucide="link" class="w-4 h-4"></i> Создать приглашение
+                </h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200">
+                        Сгенерировать ссылку
+                    </button>
+                </form>
+            </div>
+            <div class="bg-[#111] border border-white/10 rounded-sm overflow-hidden">
+                <div class="p-4 border-b border-white/10 bg-[#161616]">
+                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Активные ссылки</h3>
+                </div>
+                <div class="divide-y divide-white/5">
+                    {% for invite in invites %}
+                    <div class="p-4 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-white font-mono text-xs bg-gray-800 px-2 py-0.5 rounded">{{ invite.get_role_display }}</span>
+                                <span class="text-[10px] text-gray-500">
+                                    {% if invite.usage_limit == 0 %}∞{% else %}{{ invite.usage_count }}/{{ invite.usage_limit }}{% endif %} входов
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'accept_invite' invite.token %}" 
+                                       class="bg-transparent text-[10px] text-gray-500 w-48 border-none focus:ring-0 p-0 cursor-pointer hover:text-white transition-colors"
+                                       onclick="this.select(); document.execCommand('copy'); alert('Ссылка скопирована!');">
+                            </div>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_invite" value="{{ invite.id }}">
+                            <button type="submit" class="text-gray-500 hover:text-red-500 transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-gray-600 text-xs">Нет активных ссылок</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="bg-[#111] border border-white/10 rounded-sm overflow-hidden h-fit">
+            <div class="p-4 border-b border-white/10 bg-[#161616] flex justify-between items-center">
+                <h3 class="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4"></i> Участники ({{ access_list.count }})
+                </h3>
+            </div>
+            <div class="divide-y divide-white/5">
+                {% for access in access_list %}
+                <div class="p-4 flex justify-between items-center group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">
+                            {{ access.user.username|make_list|first|upper }}
+                        </div>
+                        <div>
+                            <div class="text-sm text-white font-bold">{{ access.user.username }}</div>
+                            <div class="text-[10px] text-gray-500 uppercase">{{ access.get_role_display }}</div>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-gray-600 font-mono">
+                        {{ access.joined_at|date:"d.m.Y" }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-gray-600 text-xs">
+                    В этой галерее пока никого нет.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

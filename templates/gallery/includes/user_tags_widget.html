@@ -1,0 +1,60 @@
+<div class="user-tag-widget">
+    <div id="tags-container" class="flex flex-wrap gap-2 mb-2 p-2 bg-[#050505] border border-white/10 min-h-[40px] rounded-sm"></div>
+    <input type="text" id="user-input" class="w-full bg-[#111] border border-white/20 text-white p-2.5 rounded-sm text-sm" placeholder="Введите логин и нажмите Enter">
+    {{ field }} 
+    <div id="user-error" class="text-red-500 text-xs mt-1 hidden">Пользователь не найден</div>
+</div>
+<script>
+    (function() {
+        const input = document.getElementById('user-input');
+        const container = document.getElementById('tags-container');
+        const hiddenField = document.getElementById('{{ field.id_for_label }}');
+        const errorMsg = document.getElementById('user-error');
+        let users = new Set();
+        if (hiddenField.value) {
+            hiddenField.value.split(',').forEach(u => {
+                if(u.trim()) addTagVisual(u.trim());
+            });
+        }
+        function updateHiddenField() {
+            hiddenField.value = Array.from(users).join(',');
+        }
+        function addTagVisual(username) {
+            if (users.has(username)) return;
+            users.add(username);
+            const tag = document.createElement('div');
+            tag.className = "flex items-center gap-1 bg-white text-black px-2 py-1 text-xs font-bold uppercase rounded-sm";
+            tag.innerHTML = `
+                <span>${username}</span>
+                <button type="button" class="hover:text-red-600 ml-1 font-bold" onclick="removeTag(this, '${username}')">&times;</button>
+            `;
+            container.appendChild(tag);
+            updateHiddenField();
+        }
+        window.removeTag = function(btn, username) {
+            users.delete(username);
+            btn.parentElement.remove();
+            updateHiddenField();
+        }
+        input.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const username = this.value.trim();
+                if (!username) return;
+                try {
+                    const response = await fetch(`/api/check_user/?username=${username}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        addTagVisual(username);
+                        this.value = '';
+                        errorMsg.classList.add('hidden');
+                    } else {
+                        errorMsg.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        });
+    })();
+</script>
