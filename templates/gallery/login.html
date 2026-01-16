@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-white/10 p-8 rounded shadow-2xl text-center">
+        <p class="text-white mb-4">Для доступа к галереям, пожалуйста, войдите или зарегистрируйтесь.</p>
+        <a href="{% url 'users:login' %}" class="w-full py-3 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm inline-block">Войти</a>
+        <p class="text-xs text-gray-500 mt-4">Если вы фотограф, используйте свой аккаунт фотографа.</p>
+    </div>
+</div>
+{% endblock %}
