@@ -18,5 +18,6 @@ urlpatterns = [
     path('api/track_view/<int:photo_id>/', views.track_photo_view, name='track_photo_view'),
     path('api/comment/<int:photo_id>/', views.save_comment, name='save_comment'),
     path('api/note/<int:photo_id>/', views.save_photographer_note, name='save_note'),
+    path('api/access/<int:pk>/update-role/', views.update_access_role, name='update_access_role'),
     path('invite/<uuid:token>/', views.accept_invite, name='accept_invite'),
 ]

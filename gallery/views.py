@@ -47,6 +47,22 @@ def track_photo_view(request, photo_id):
 def landing(request): return render(request, 'gallery/landing.html')
 @require_POST
 @login_required
+def update_access_role(request, pk):
+    access = get_object_or_404(GalleryAccess, pk=pk)
+    if access.gallery.photographer != request.user and not request.user.is_superuser:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    
+    data = json.loads(request.body)
+    new_role = data.get('role')
+    if new_role not in ['CLIENT', 'VIEWER']:
+        return JsonResponse({'error': 'Invalid role'}, status=400)
+    
+    access.role = new_role
+    access.save()
+    return JsonResponse({'status': 'ok'})
+
+@require_POST
+@login_required
 def save_photographer_note(request, photo_id):
     photo = get_object_or_404(Photo, id=photo_id)
     if photo.gallery.photographer != request.user and not request.user.is_superuser:
@@ -394,10 +410,28 @@ def gallery_access(request, pk):
         f = GalleryAccessForm(request.POST, instance=gallery)
         if f.is_valid():
             f.save()
+            is_public_new = f.cleaned_data['is_public']
+            if is_public_new:
+                for access_obj in GalleryAccess.objects.filter(gallery=gallery):
+                    if access_obj.role != 'CLIENT':
+                        access_obj.original_role = access_obj.role
+                        access_obj.role = 'CLIENT'
+                        access_obj.save()
+            else:
+                for access_obj in GalleryAccess.objects.filter(gallery=gallery):
+                    if access_obj.original_role:
+                        access_obj.role = access_obj.original_role
+                        access_obj.original_role = None
+                        access_obj.save()
+                    elif access_obj.role == 'CLIENT': # Если не было original_role, но текущая роль CLIENT (была принудительно поставлена), то возвращаем на VIEWER
+                        access_obj.role = 'VIEWER'
+                        access_obj.save()
+            
             users_data = f.cleaned_data.get('users_data', '')
+            new_user_role = request.POST.get('new_user_role', 'VIEWER') # Получаем роль для новых пользователей
             if users_data:
                 for uname in [u.strip() for u in users_data.split(',') if u.strip()]:
-                    try: u = CustomUser.objects.get(username=uname); GalleryAccess.objects.get_or_create(gallery=gallery, user=u, defaults={'role': 'CLIENT'})
+                    try: u = CustomUser.objects.get(username=uname); GalleryAccess.objects.get_or_create(gallery=gallery, user=u, defaults={'role': new_user_role})
                     except: pass
             messages.success(request, 'Обновлено.'); return redirect('gallery_access', pk=pk)
     if request.method == 'POST' and 'invite_submit' in request.POST:

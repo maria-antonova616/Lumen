@@ -32,6 +32,7 @@ class GalleryAccess(models.Model):
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name='access_list')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gallery_accesses')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='VIEWER')
+    original_role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
     last_viewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Последний просмотр")
     class Meta:
