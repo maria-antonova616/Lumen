@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-red-900/50 p-8 rounded shadow-2xl text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent"></div>
+        <div class="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-900/50">
+            <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+        </div>
+        <h2 class="text-xl font-bold uppercase tracking-widest text-white mb-2">Удалить галерею?</h2>
+        <p class="text-lg text-white font-serif italic mb-6">"{{ object.title }}"</p>
+        <p class="text-gray-400 text-xs mb-8 leading-relaxed">
+            Это действие необратимо. <br>
+            Вся галерея и <span class="text-white font-bold">{{ object.photos.count }} фотографий</span> будут удалены с сервера навсегда.
+        </p>
+        <form method="post" class="flex flex-col gap-3">
+            {% csrf_token %}
+            <button type="submit" class="w-full py-4 bg-red-600 text-white font-bold uppercase tracking-widest hover:bg-red-500 transition-colors text-xs">
+                Подтвердить удаление
+            </button>
+            <a href="{% url 'gallery_manage' object.id %}" class="w-full py-4 border border-white/10 text-gray-400 hover:text-white font-bold uppercase tracking-widest hover:bg-white/5 transition-colors text-xs">
+                Отмена
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-3xl bg-[#111] border border-white/10 p-8 rounded shadow-2xl">
+        <h2 class="text-2xl font-bold uppercase tracking-widest text-white mb-6 text-center">
+            {% if form.instance.pk %}Настройки Галереи{% else %}Новая Галерея{% endif %}
+        </h2>
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div class="space-y-4 border-b border-white/10 pb-6">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Основное</h3>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Название</label>
+                    {{ form.title }}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Срок действия</label>
+                        {{ form.expires_at }}
+                    </div>
+                    <div>
+                         <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Лимит выбора (на человека)</label>
+                        {{ form.max_selection_count }}
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-4 pt-2">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Доступ и Приватность</h3>
+                <div class="bg-[#1a1a1a] p-4 rounded border border-white/5 space-y-4">
+                    <div class="flex items-center gap-3">
+                        {{ form.is_public }}
+                        <div>
+                            <label class="text-xs font-bold uppercase tracking-widest text-white">Публичная галерея</label>
+                            <p class="text-[10px] text-gray-500">Любой, у кого есть ссылка, сможет просматривать фото.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        Добавить пользователей (Логины)
+                    </label>
+                    {{ form.username_list }}
+                    <p class="text-[10px] text-gray-500 mt-1">Введите логины пользователей через запятую (например: client1, anna_model). Они получат гарантированный доступ.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        Авто-добавление по ссылке (Кол-во мест)
+                    </label>
+                    {{ form.invite_limit }}
+                    <p class="text-[10px] text-gray-500 mt-1">
+                        Если > 0, первые N человек, перешедших по ссылке, автоматически получат доступ. 
+                        0 = доступ только по списку выше (или всем, если публично).
+                    </p>
+                </div>
+                 <div class="flex items-center gap-3 pt-4 border-t border-white/10 mt-4">
+                    {{ form.is_active }}
+                    <label class="text-xs font-bold uppercase tracking-widest text-gray-400">Галерея Активна</label>
+                </div>
+            </div>
+            <div class="pt-6 flex flex-col gap-3">
+                <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm">
+                    {% if form.instance.pk %}Сохранить Настройки{% else %}Создать и Загрузить Фото{% endif %}
+                </button>
+                <a href="{% url 'dashboard' %}" class="w-full py-3 text-center border border-white/20 text-gray-400 hover:text-white uppercase tracking-widest text-xs hover:bg-white/5 transition-colors">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
