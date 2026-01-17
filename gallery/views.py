@@ -171,12 +171,10 @@ def gallery_analytics(request, pk):
             'photographer_note': p.photographer_note,
             'filename': p.original_filename or os.path.basename(p.image.name)
         })
-    # Activity Chart Data (Likes, Views, Comments)
     activity_likes = ClientChoice.objects.filter(cc_filter, is_liked=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
     activity_views = ClientChoice.objects.filter(cc_filter, is_viewed=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
     activity_comments = ClientChoice.objects.filter(cc_filter).exclude(comment='').annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
     
-    # Merge dates for chart
     all_dates = sorted(list(set(
         [item['date'] for item in activity_likes] + 
         [item['date'] for item in activity_views] + 
@@ -192,10 +190,8 @@ def gallery_analytics(request, pk):
     chart_views = [get_count_for_date(activity_views, d) for d in all_dates]
     chart_comments = [get_count_for_date(activity_comments, d) for d in all_dates]
 
-    # Global Activity Log (Views, Likes, Comments)
     activity_log = ClientChoice.objects.filter(cc_filter).select_related('client', 'photo').order_by('-timestamp')
     
-    # Global Comments List
     all_comments_list = activity_log.exclude(comment='')
 
     top_filter = Q(choice__is_liked=True)

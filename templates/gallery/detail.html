@@ -267,7 +267,7 @@
                 }
             });
             
-            if(canLike) updateButtonVisuals('modal-like-btn', isLiked);
+            updateButtonVisuals('modal-like-btn', isLiked);
             img.style.opacity = '1';
             fetch(`/api/track_view/${id}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} });
         }, 100);
@@ -332,8 +332,9 @@
         if(!btn) return;
         const icon = btn.querySelector('svg') || btn.querySelector('i');
         const textSpan = btn.querySelector('span');
+
         if(isLiked) {
-            btn.classList.remove('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-white/5');
+            btn.classList.remove('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-white/5', 'opacity-0', 'group-hover:opacity-100');
             btn.classList.add('bg-white', 'text-black', 'border-white', 'hover:bg-black', 'hover:text-white');
             if(icon) icon.setAttribute('fill', 'currentColor');
             if(btnId === 'modal-like-btn' && textSpan) textSpan.textContent = "Выбрано";
@@ -341,9 +342,13 @@
             btn.classList.remove('bg-white', 'text-black', 'border-white', 'hover:bg-black', 'hover:text-white');
             btn.classList.add('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-white/5');
             if(icon) icon.setAttribute('fill', 'none');
+            
             if(btnId !== 'modal-like-btn') {
-                if(!showCount) { btn.classList.add('opacity-0', 'group-hover:opacity-100'); } 
-                else { btn.classList.remove('opacity-0', 'group-hover:opacity-100'); }
+                if(!showCount) { 
+                    btn.classList.add('opacity-0', 'group-hover:opacity-100'); 
+                } else { 
+                    btn.classList.remove('opacity-0', 'group-hover:opacity-100'); 
+                }
             }
             if(btnId === 'modal-like-btn' && textSpan) textSpan.textContent = "Лайк";
         }
@@ -356,27 +361,56 @@
     function toggleLike(event, photoId) {
         if(event) event.stopPropagation();
         if(!photoId) return;
-        fetch(`/api/like/${photoId}/`, {
-            method: 'POST', headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
+
+        const pId = String(photoId);
+        const photoIndex = photoList.findIndex(p => String(p.id) === pId);
+        if (photoIndex === -1) return;
+
+        const photo = photoList[photoIndex];
+        const oldState = photo.isLiked;
+        
+        photo.isLiked = !oldState;
+        updateButtonVisuals(`grid-btn-${pId}`, photo.isLiked);
+        if(String(currentPhotoId) === pId) updateButtonVisuals('modal-like-btn', photo.isLiked);
+        
+        const card = document.querySelector(`div[data-id="${pId}"]`);
+        if(card) {
+            if(photo.isLiked) { 
+                card.classList.add('border-white', 'ring-1', 'ring-white'); 
+                card.classList.remove('border-[#222]'); 
+            } else { 
+                card.classList.remove('border-white', 'ring-1', 'ring-white'); 
+                card.classList.add('border-[#222]'); 
+            }
+        }
+
+        fetch(`/api/like/${pId}/`, {
+            method: 'POST', 
+            headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
         }).then(res => res.json()).then(data => {
             if(data.error) {
-                showToast(data.error === 'Personal limit reached' ? 'Личный лимит исчерпан!' : 'Общий лимит исчерпан!', true);
-            } else {
-                const showCount = data.can_see_others && data.photo_total_likes > 0;
-                updateButtonVisuals(`grid-btn-${photoId}`, data.liked, data.photo_total_likes, showCount);
-                if(currentPhotoId === photoId) updateButtonVisuals('modal-like-btn', data.liked);
-                const headerCount = document.getElementById('header-liked-count');
-                if(headerCount) headerCount.textContent = data.my_total_count;
-                const card = document.querySelector(`div[data-id="${photoId}"]`);
+                photo.isLiked = oldState;
+                updateButtonVisuals(`grid-btn-${pId}`, oldState);
+                if(String(currentPhotoId) === pId) updateButtonVisuals('modal-like-btn', oldState);
                 if(card) {
-                    if(data.liked) { card.classList.add('border-white', 'ring-1', 'ring-white'); card.classList.remove('border-[#222]'); } 
+                    if(oldState) { card.classList.add('border-white', 'ring-1', 'ring-white'); card.classList.remove('border-[#222]'); } 
                     else { card.classList.remove('border-white', 'ring-1', 'ring-white'); card.classList.add('border-[#222]'); }
                 }
+                showToast(data.error === 'Personal limit reached' ? 'Личный лимит исчерпан!' : 'Общий лимит исчерпан!', true);
+            } else {
+                photo.isLiked = data.liked;
+                const showCount = data.can_see_others && data.photo_total_likes > 0;
+                updateButtonVisuals(`grid-btn-${pId}`, data.liked, data.photo_total_likes, showCount);
+                
+                const headerCount = document.getElementById('header-liked-count');
+                if(headerCount) headerCount.textContent = data.my_total_count;
             }
+        }).catch(() => {
+            photo.isLiked = oldState;
+            updateButtonVisuals(`grid-btn-${pId}`, oldState);
         });
     }
 
-    // Handlers
     document.addEventListener('keydown', (e) => {
         if (document.getElementById('modal').classList.contains('hidden')) return;
         if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
@@ -393,7 +427,6 @@
         if (Math.abs(diff) > 50) diff > 0 ? nextPhoto() : prevPhoto();
     }, {passive: true});
 
-    // Sortable & Upload logic remains same...
     {% if is_owner %}
     const grid = document.getElementById('photo-grid');
     if (grid) {
@@ -401,7 +434,7 @@
             animation: 150, ghostClass: 'opacity-50', delay: 100, delayOnTouchOnly: true,
             onEnd: function() {
                 const order = Array.from(grid.children).map(el => el.getAttribute('data-id'));
-                fetch('{% url "reorder_photos_api" %}', { method: 'POST', headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}, body: JSON.stringify({order: order}) });
+                fetch('{% url "reorder_photos_api" %}', { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}, body: JSON.stringify({order: order}) });
             }
         });
     }
