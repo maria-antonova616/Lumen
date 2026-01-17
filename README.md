@@ -26,7 +26,7 @@
 
 ---
 
-## 🛠 Технический стек
+## Технический стек
 
 *   **Backend:** Python 3, Django 5 (CBV, Custom User Model, ORM Aggregations).
 *   **Frontend:** Tailwind CSS, JavaScript (Fetch API), Chart.js.
