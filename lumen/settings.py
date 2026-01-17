@@ -100,11 +100,13 @@ CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+    'SECURE': True, # Форсируем HTTPS
 }
 
+# Используем кастомное хранилище с откатом на локальное
 STORAGES = {
     "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        "BACKEND": "lumen.storages.CloudinaryFallbackStorage",
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
@@ -112,6 +114,7 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media' # Обязательно для FileSystemStorage
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
