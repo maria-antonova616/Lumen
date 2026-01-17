@@ -94,27 +94,48 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Cloudinary Settings
-# ==============================================================================
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
-    'SECURE': True, # Форсируем HTTPS
+    'SECURE': True,
 }
 
-# Используем кастомное хранилище с откатом на локальное
-STORAGES = {
-    "default": {
-        "BACKEND": "lumen.storages.CloudinaryFallbackStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
+try:
+    import cloudinary.api
+    cloudinary.config(
+        cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+        api_key=CLOUDINARY_STORAGE['API_KEY'],
+        api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+        secure=True
+    )
+    cloudinary.api.ping()
+    CLOUDINARY_ACTIVATED = True
+except Exception as e:
+    print(f"Cloudinary connection failed at settings load: {e}")
+    CLOUDINARY_ACTIVATED = False
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media' # Обязательно для FileSystemStorage
+if all(CLOUDINARY_STORAGE.values()) and CLOUDINARY_ACTIVATED:
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = '/media/'
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
