@@ -330,16 +330,18 @@ def toggle_like(request, photo_id):
     if gallery.is_common_likes:
         is_already_selected = ClientChoice.objects.filter(photo=photo, is_liked=True).exists()
         if is_already_selected:
-            ClientChoice.objects.filter(photo=photo).delete()
+            ClientChoice.objects.filter(photo=photo).update(is_liked=False)
             is_liked_now = False
         else:
             if gallery.total_selection_limit > 0:
                 total = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo').distinct().count()
                 if total >= gallery.total_selection_limit: return JsonResponse({'error': 'Total limit reached'}, status=400)
-            ClientChoice.objects.create(photo=photo, client=user, is_liked=True, is_viewed=True)
+            choice.is_liked = True
+            choice.is_viewed = True
+            choice.save()
             is_liked_now = True
         total_count = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo').distinct().count()
-        return JsonResponse({'liked': is_liked_now, 'my_total_count': total_count, 'photo_total_likes': 1 if is_liked_now else 0, 'can_see_others': True})
+        return JsonResponse({'liked': is_liked_now, 'my_total_count': total_count, 'photo_total_likes': 0, 'can_see_others': False})
     else:
         if not choice.is_liked:
             user_likes = ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).count()
