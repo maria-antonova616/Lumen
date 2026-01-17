@@ -6,3 +6,4 @@ requests
 pandas
 matplotlib
 python-dotenv
+django-cloudinary-storage
