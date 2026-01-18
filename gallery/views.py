@@ -6,7 +6,7 @@ from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST, require_GET
-from django.db.models import Max, Count, Sum, Q, Prefetch
+from django.db.models import Max, Count, Sum, Avg, Q, Prefetch
 from django.db.models.functions import TruncDate
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
@@ -109,7 +109,16 @@ def dashboard(request):
     ).order_by('-created_at')
     
     total_galleries = galleries.count()
-    total_likes_global = sum(g.total_likes_count for g in galleries)
+    
+    # Использование Sum и Avg для расчета KPI
+    stats = galleries.aggregate(
+        total_likes=Sum('total_likes_count'),
+        avg_likes=Avg('total_likes_count')
+    )
+    
+    total_likes_global = stats['total_likes'] or 0
+    average_likes = round(stats['avg_likes'] or 0, 1)
+    
     top_galleries = sorted(galleries, key=lambda x: x.total_likes_count, reverse=True)[:5]
     chart_top_labels = [g.title for g in top_galleries]
     chart_top_data = [g.total_likes_count for g in top_galleries]
