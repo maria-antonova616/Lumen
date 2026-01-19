@@ -86,3 +86,10 @@
 
 *   **Фотограф:** `demo_photo` / `pass123`
 *   **Клиент:** `demo_client` / `pass123`
+
+
+<img width="1848" height="1039" alt="image" src="https://github.com/user-attachments/assets/d5cdb0ea-c1f3-42f3-b680-290ad4a91a46" />
+<img width="1855" height="1033" alt="image" src="https://github.com/user-attachments/assets/c3394988-7fed-4618-854d-9f60dacb42e3" />
+<img width="1859" height="1032" alt="image" src="https://github.com/user-attachments/assets/bc7ee8eb-b115-4b03-b2ea-640a5137d212" />
+
+
