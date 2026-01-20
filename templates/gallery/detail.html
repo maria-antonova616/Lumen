@@ -71,7 +71,7 @@
                                src="{% if photo.thumbnail %}{{ photo.thumbnail.url }}{% else %}{{ photo.image.url }}{% endif %}" 
                                class="w-full h-full object-cover transition-transform duration-500 {% if is_owner %}group-hover:scale-105{% endif %}" 
                                loading="lazy"
-                               onclick="if(window.innerWidth < 768) setSidebarState(true); openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}', {% if state.liked_by_me %}true{% else %}false{% endif %})"
+                               onclick="if(window.innerWidth < 768) setSidebarState(true); openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}')"
                            />
                            {% if is_owner %}
                            <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -237,7 +237,7 @@
         {% endfor %}
     };
 
-    function openModal(id, url, seq, isLiked) {
+    function openModal(id, url, seq) {
         currentPhotoId = id;
         const img = document.getElementById('modal-img');
         img.style.opacity = '0';
@@ -277,7 +277,10 @@
                 }
             });
             
-            updateButtonVisuals('modal-like-btn', isLiked);
+            const currentPhoto = photoList.find(p => String(p.id) === String(id));
+            const currentIsLiked = currentPhoto ? currentPhoto.isLiked : false;
+            updateButtonVisuals('modal-like-btn', currentIsLiked);
+
             img.style.opacity = '1';
             fetch(`/api/track_view/${id}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} });
         }, 100);
@@ -293,7 +296,7 @@
         let newIndex = currentIndex + direction;
         if (newIndex >= 0 && newIndex < photoList.length) {
             const nextP = photoList[newIndex];
-            openModal(nextP.id, nextP.url, 0, nextP.isLiked);
+            openModal(nextP.id, nextP.url, 0);
         }
     }
 
