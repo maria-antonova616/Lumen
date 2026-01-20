@@ -110,7 +110,6 @@ def dashboard(request):
     
     total_galleries = galleries.count()
     
-    # Использование Sum и Avg для расчета KPI
     stats = galleries.aggregate(
         total_likes=Sum('total_likes_count'),
         avg_likes=Avg('total_likes_count')
@@ -445,12 +444,12 @@ def gallery_access(request, pk):
                         access_obj.role = access_obj.original_role
                         access_obj.original_role = None
                         access_obj.save()
-                    elif access_obj.role == 'CLIENT': # Если не было original_role, но текущая роль CLIENT (была принудительно поставлена), то возвращаем на VIEWER
+                    elif access_obj.role == 'CLIENT':
                         access_obj.role = 'VIEWER'
                         access_obj.save()
             
             users_data = f.cleaned_data.get('users_data', '')
-            new_user_role = request.POST.get('new_user_role', 'VIEWER') # Получаем роль для новых пользователей
+            new_user_role = request.POST.get('new_user_role', 'VIEWER')
             if users_data:
                 for uname in [u.strip() for u in users_data.split(',') if u.strip()]:
                     try: u = CustomUser.objects.get(username=uname); GalleryAccess.objects.get_or_create(gallery=gallery, user=u, defaults={'role': new_user_role})

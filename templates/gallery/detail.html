@@ -9,15 +9,15 @@
           <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-gray-200">
              <span class="font-serif font-bold text-black text-[10px] italic tracking-tighter transform -rotate-12">L</span>
           </div>
-          <div class="flex flex-col justify-center">
-            <h1 class="text-white text-xs md:text-xs font-bold tracking-[0.2em] uppercase truncate max-w-[120px] md:max-w-none">{{ gallery.title }}</h1>
+          <div class="flex flex-col justify-center min-w-0">
+            <h1 class="text-white text-xs md:text-xs font-bold tracking-[0.2em] uppercase truncate max-w-[150px] md:max-w-none">{{ gallery.title }}</h1>
             <span class="text-[9px] text-gray-500 font-mono uppercase mt-0.5 hidden md:block">
                 {% if is_owner %}РЕЖИМ АВТОРА{% else %}{{ role_name }}{% endif %}
                 {% if gallery.is_common_likes %}<span class="text-green-500 ml-2">• ОБЩИЕ ЛАЙКИ</span>{% endif %}
             </span>
           </div>
         </div>
-        <div class="flex items-center gap-4 md:gap-6 relative z-10">
+        <div class="flex items-center gap-3 md:gap-6 relative z-10">
             {% if is_owner %}
                 <form id="upload-form" action="{% url 'gallery_upload' gallery.photographer.id gallery.id %}" method="post" enctype="multipart/form-data" class="flex items-center">
                     {% csrf_token %}
@@ -31,23 +31,23 @@
             <div class="flex flex-col items-end">
                  <div class="bg-[#050505] w-9 h-9 md:w-12 md:h-12 rounded-full border border-[#333] shadow-inner flex items-center justify-center relative">
                     <span id="header-liked-count" class="font-mono text-base md:text-lg font-bold text-gray-300">{{ liked_count }}</span>
-                    {% if not is_owner %}<div class="absolute -bottom-4 text-[7px] text-gray-500 font-mono">MAX {{ gallery.max_selection_count }}</div>{% endif %}
+                    {% if not is_owner %}<div class="absolute -bottom-4 text-[7px] text-gray-500 font-mono hidden md:block">MAX {{ gallery.max_selection_count }}</div>{% endif %}
                  </div>
             </div>
             {% endif %}
-            <a href="{% url 'dashboard' %}" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#222] flex items-center justify-center border border-white/10 hover:bg-white hover:text-black transition-colors"><i data-lucide="layout-grid" class="w-4 h-4"></i></a>
+            <a href="{% url 'dashboard' %}" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#222] flex items-center justify-center border border-white/10 hover:bg-white hover:text-black transition-colors shrink-0"><i data-lucide="layout-grid" class="w-4 h-4"></i></a>
         </div>
       </header>
       {% if can_like or is_owner %}
       <div class="w-full bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#222] z-20 flex flex-col shrink-0">
-            <div class="flex items-center px-4 md:px-6 h-12 md:h-14 gap-2 overflow-x-auto custom-scrollbar">
-                 <a href="?filter=ALL" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all {% if view_filter == 'ALL' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">Все фото</a>
-                 <a href="?filter=LIKED" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all flex items-center gap-2 {% if view_filter == 'LIKED' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">
+            <div class="flex items-center px-4 md:px-8 h-12 md:h-14 gap-2 overflow-x-auto no-scrollbar">
+                 <a href="?filter=ALL" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all whitespace-nowrap {% if view_filter == 'ALL' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">Все фото</a>
+                 <a href="?filter=LIKED" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all flex items-center gap-2 whitespace-nowrap {% if view_filter == 'LIKED' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">
                     <i data-lucide="heart" class="w-3 h-3 {% if view_filter == 'LIKED' %}fill-black{% endif %}"></i> Выбранные
                  </a>
             </div>
             {% if is_owner and view_filter == 'LIKED' %}
-            <div class="flex items-center px-4 md:px-6 pb-2 md:pb-3 gap-2 overflow-x-auto custom-scrollbar">
+            <div class="flex items-center px-4 md:px-8 pb-3 gap-2 overflow-x-auto no-scrollbar">
                 <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mr-1 shrink-0">Клиент:</span>
                 <a href="?filter=LIKED" class="whitespace-nowrap text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all {% if not current_client_id %}bg-[#222] text-white border-white{% else %}bg-transparent text-gray-500 border-[#333] hover:border-gray-500{% endif %}">Все</a>
                 {% for client in clients_with_likes %}
@@ -57,10 +57,10 @@
             {% endif %}
       </div>
       {% endif %}
-      <main class="flex-1 relative bg-[#0a0a0a] overflow-hidden p-2 md:p-6">
+      <main class="flex-1 relative bg-[#0a0a0a] overflow-hidden p-3 md:p-8">
         <div class="w-full h-full relative bg-[#050505] rounded-lg overflow-hidden border border-[#222] flex flex-col">
-           <div class="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-6">
-               <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
+           <div class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-8">
+               <div id="photo-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                    {% for photo in photos %}
                        {% with state=photo_states|get_item:photo.id %}
                        <div 
@@ -76,7 +76,7 @@
                            {% if is_owner %}
                            <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                <form action="{% url 'photo_delete' photo.id %}" method="post" onsubmit="return confirm('Удалить фото безвозвратно?');">{% csrf_token %}
-                                   <button type="submit" class="bg-red-600 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-red-500 shadow-md"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                                   <button type="submit" class="bg-red-600 text-white w-7 h-7 rounded flex items-center justify-center hover:bg-red-500 shadow-md transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                </form>
                            </div>
                            {% endif %}
@@ -85,7 +85,7 @@
                                 <button 
                                     id="grid-btn-{{ photo.id }}"
                                     onclick="toggleLike(event, '{{ photo.id }}')"
-                                    class="flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all shadow-lg border backdrop-blur-sm
+                                    class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all shadow-lg border backdrop-blur-md
                                     {% if state.liked_by_me %}
                                         bg-white text-black border-white
                                     {% else %}
@@ -93,15 +93,15 @@
                                         {% if not state.show_count %}opacity-0 group-hover:opacity-100{% endif %}
                                     {% endif %}"
                                 >
-                                    <i data-lucide="heart" class="w-3 h-3" {% if state.liked_by_me %}fill="currentColor"{% else %}fill="none"{% endif %}></i>
+                                    <i data-lucide="heart" class="w-3.5 h-3.5" {% if state.liked_by_me %}fill="currentColor"{% else %}fill="none"{% endif %}></i>
                                     <span class="text-[9px] font-bold font-mono {% if not state.show_count %}hidden{% endif %}">
                                         {{ state.total_likes }}
                                     </span>
                                 </button>
                            </div>
                            {% endif %}
-                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2 pointer-events-none">
-                               <span class="text-[10px] font-mono text-gray-400 group-hover:text-white transition-colors truncate block">
+                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-8 pb-2 px-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                               <span class="text-[9px] font-mono text-gray-400 group-hover:text-white transition-colors truncate block">
                                    {{ photo.original_filename|default:photo.image.name|basename }}
                                </span>
                            </div>
@@ -111,57 +111,68 @@
                        <div class="col-span-full h-64 flex flex-col items-center justify-center text-gray-500 gap-4"><i data-lucide="image" class="w-12 h-12 opacity-20"></i><p class="text-xs uppercase tracking-widest">{% if view_filter == 'LIKED' %}В этой категории нет фото{% else %}Галерея пуста{% endif %}</p></div>
                    {% endfor %}
                </div>
-               <div class="h-12 md:h-0"></div>
+               <div class="h-16 md:h-0"></div>
            </div>
         </div>
       </main>
-      <div id="modal" class="hidden fixed inset-0 z-50 bg-black flex flex-col md:flex-row">
+      <div id="modal" class="hidden fixed inset-0 z-[100] bg-black flex flex-col md:flex-row">
             <div class="flex-1 relative bg-black flex items-center justify-center p-2 md:p-8 select-none" onclick="closeModal()">
-                <!-- Navigation Buttons -->
-                <button onclick="prevPhoto(event)" class="absolute left-4 z-50 p-4 text-white/20 hover:text-white transition-all group">
-                    <i data-lucide="chevron-left" class="w-10 h-10 group-hover:scale-110"></i>
+                <button onclick="prevPhoto(event)" class="absolute left-2 md:left-4 z-50 p-2 md:p-4 text-white/20 hover:text-white transition-all group">
+                    <i data-lucide="chevron-left" class="w-8 h-8 md:w-10 md:h-10 group-hover:scale-110"></i>
                 </button>
-                <button onclick="nextPhoto(event)" class="absolute right-4 z-50 p-4 text-white/20 hover:text-white transition-all group">
-                    <i data-lucide="chevron-right" class="w-10 h-10 group-hover:scale-110"></i>
+                <button onclick="nextPhoto(event)" class="absolute right-2 md:right-4 z-50 p-2 md:p-4 text-white/20 hover:text-white transition-all group">
+                    <i data-lucide="chevron-right" class="w-8 h-8 md:w-10 md:h-10 group-hover:scale-110"></i>
                 </button>
 
-                <button class="absolute top-6 left-6 text-white z-50" onclick="closeModal(); event.stopPropagation();"><div class="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase tracking-widest">Назад</span></div></button>
+                <button class="absolute top-4 left-4 text-white z-50 md:top-8 md:left-8" onclick="closeModal(); event.stopPropagation();">
+                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">Закрыть</span>
+                    </div>
+                </button>
                 <img id="modal-img" src="" class="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300" onclick="event.stopPropagation();">
             </div>
-            <div class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-6 flex flex-col shrink-0 max-h-[50vh] md:max-h-full overflow-y-auto custom-scrollbar">
-                <div class="mb-6 pb-6 border-b border-white/5">
-                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Файл</h3>
-                    <div class="flex items-center gap-2 bg-white/5 p-2 rounded border border-white/10 group cursor-pointer" onclick="copyToClipboard(document.getElementById('modal-filename').textContent)">
-                        <span id="modal-filename" class="text-[10px] font-mono text-gray-400 break-all leading-relaxed"></span>
-                        <i data-lucide="copy" class="w-3 h-3 text-gray-600 group-hover:text-white transition-colors shrink-0"></i>
-                    </div>
+            <div id="modal-sidebar" class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-0 md:p-8 flex flex-col shrink-0 max-h-[60vh] md:max-h-full overflow-y-auto custom-scrollbar rounded-t-2xl md:rounded-t-none transition-all duration-500 ease-in-out relative z-10">
+                <div class="w-full md:hidden h-10 flex items-center justify-center cursor-pointer group shrink-0" id="sidebar-toggle-area">
+                    <div class="w-12 h-1 bg-white/20 rounded-full group-hover:bg-white/40 transition-colors"></div>
                 </div>
+                
+                <div class="space-y-6 px-4 pb-8 md:px-0 md:pb-0" id="sidebar-content">
+                    <div class="pb-5 border-b border-white/5">
+                        <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 mb-2">Файл</h3>
+                        <div class="flex items-center gap-2 bg-white/5 p-2 rounded border border-white/10 group cursor-pointer" onclick="copyToClipboard(document.getElementById('modal-filename').textContent)">
+                            <span id="modal-filename" class="text-[10px] font-mono text-gray-400 break-all leading-relaxed"></span>
+                            <i data-lucide="copy" class="w-3 h-3 text-gray-600 group-hover:text-white transition-colors shrink-0"></i>
+                        </div>
+                    </div>
 
-                <div id="photographer-note-container" class="mb-6 pb-6 border-b border-white/5 hidden">
-                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Примечание фотографа</h3>
-                    {% if is_owner %}
-                        <textarea id="modal-note" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-xs text-white focus:outline-none focus:border-white transition-colors h-24 resize-none placeholder-gray-700" placeholder="Ваше примечание для клиента..."></textarea>
-                        <button onclick="saveNote()" class="mt-2 text-[9px] font-bold uppercase text-gray-500 hover:text-white transition-colors">Обновить примечание</button>
-                    {% else %}
-                        <p id="modal-note-display" class="text-xs text-blue-400 italic bg-blue-400/5 p-3 rounded border border-blue-400/10"></p>
+                    <div id="photographer-note-container" class="pb-5 border-b border-white/5 hidden">
+                        <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 mb-2">Примечание автора</h3>
+                        {% if is_owner %}
+                            <textarea id="modal-note" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-[11px] text-white focus:outline-none focus:border-white transition-colors h-20 resize-none placeholder-gray-700" placeholder="Заметка..."></textarea>
+                            <button onclick="saveNote()" class="mt-2 text-[9px] font-bold uppercase text-gray-500 hover:text-white transition-colors flex items-center gap-1.5"><i data-lucide="save" class="w-3 h-3"></i> Обновить</button>
+                        {% else %}
+                            <p id="modal-note-display" class="text-[11px] text-blue-400 italic bg-blue-400/5 p-3 rounded border border-blue-400/10 leading-relaxed"></p>
+                        {% endif %}
+                    </div>
+
+                    <div class="min-h-0 flex flex-col">
+                        <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 mb-3">Комментарии</h3>
+                        <div id="modal-comments-list" class="space-y-3 mb-4"></div>
+                        
+                        <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 mb-2">Ваш комментарий</h3>
+                        <textarea id="modal-comment" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-[11px] text-white focus:outline-none focus:border-white transition-colors h-24 resize-none placeholder-gray-700" placeholder="Пожелания..."></textarea>
+                        <button onclick="saveComment()" class="mt-3 w-full py-3 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Сохранить</button>
+                    </div>
+                    
+                    {% if can_like %}
+                    <div class="pt-2 pb-4">
+                        <button id="modal-like-btn" onclick="toggleLike(event, currentPhotoId)" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest flex justify-center items-center gap-2 transition-all hover:bg-gray-200 shadow-xl">
+                            <i id="modal-like-icon" data-lucide="heart" class="w-4 h-4"></i> <span id="modal-like-text">Выбрать</span>
+                        </button>
+                    </div>
                     {% endif %}
                 </div>
-
-                <div class="flex-1">
-                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-4">Комментарии</h3>
-                    <div id="modal-comments-list" class="mb-6"></div>
-                    
-                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Ваш комментарий</h3>
-                    <textarea id="modal-comment" class="w-full bg-[#111] border border-[#222] rounded-sm p-4 text-sm text-white focus:outline-none focus:border-white transition-colors h-32 resize-none placeholder-gray-700" placeholder="Пожелания по ретуши..."></textarea>
-                    <button onclick="saveComment()" class="mt-4 w-full py-3 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Сохранить</button>
-                </div>
-                {% if can_like %}
-                <div class="mt-auto pt-6 border-t border-[#222]">
-                    <button id="modal-like-btn" onclick="toggleLike(event, currentPhotoId)" class="w-full py-4 border border-white/20 text-white font-bold uppercase tracking-widest flex justify-center items-center gap-2 transition-all hover:bg-white/5">
-                        <i id="modal-like-icon" data-lucide="heart" class="w-4 h-4"></i> <span id="modal-like-text">Лайк</span>
-                    </button>
-                </div>
-                {% endif %}
             </div>
       </div>
       <div id="upload-overlay" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6">
@@ -484,7 +495,7 @@
         });
     }
 
-    async function compressImage(file) {
+    function compressImage(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -505,5 +516,56 @@
             };
         });
     }
+
+    let sidebarStartY = 0;
+    const sidebar = document.getElementById('modal-sidebar');
+    const sidebarContent = document.getElementById('sidebar-content');
+    const toggleArea = document.getElementById('sidebar-toggle-area');
+
+    function setSidebarState(isMaximized) {
+        if (isMaximized) {
+            sidebar.style.maxHeight = '60vh';
+            sidebarContent.style.opacity = '1';
+            sidebarContent.style.pointerEvents = 'auto';
+        } else {
+            sidebar.style.maxHeight = '40px';
+            sidebarContent.style.opacity = '0';
+            sidebarContent.style.pointerEvents = 'none';
+        }
+    }
+
+    if (toggleArea) {
+        toggleArea.addEventListener('touchstart', (e) => {
+            sidebarStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        toggleArea.addEventListener('touchend', (e) => {
+            const endY = e.changedTouches[0].clientY;
+            const diffY = sidebarStartY - endY;
+
+            if (window.innerWidth < 768) {
+                if (diffY > 30) { 
+                    setSidebarState(true);
+                } else if (diffY < -30) {
+                    setSidebarState(false);
+                }
+            }
+        }, { passive: true });
+
+        toggleArea.addEventListener('click', () => {
+            if (window.innerWidth < 768) {
+                const isMinimized = sidebar.style.maxHeight === '40px';
+                setSidebarState(isMinimized);
+            }
+        });
+    }
+
+    const originalOpenModal = openModal;
+    window.openModal = function(id, url, seq, isLiked) {
+        if (window.innerWidth < 768) {
+            setSidebarState(true);
+        }
+        originalOpenModal(id, url, seq, isLiked);
+    };
 </script>
 {% endblock %}

@@ -101,6 +101,4 @@ def delete_photo_files(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Gallery)
 def delete_gallery_folder(sender, instance, **kwargs):
-    # При удалении галереи пытаемся удалить папку, если она пуста или содержит только эти фото
-    # Фото уже удалены сигналом выше, так как Gallery.delete() вызывает CASCADE удаление Photo
     pass
