@@ -1,0 +1,3416 @@
+PROJECT STRUCTURE:
+==================
+.
+├── .gitignore
+├── README.md
+├── TZ.md
+├── db.sqlite3
+├── gallery
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_initial.py
+│   │   ├── 0003_photo_photographer_note.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── templatetags
+│   │   ├── __init__.py
+│   │   └── gallery_extras.py
+│   ├── urls.py
+│   └── views.py
+├── lumen
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── manage.py
+├── media
+│   └── photos
+│       └── 2026
+│           └── 01
+│               └── 08
+├── requirements.txt
+├── static
+├── templates
+│   ├── base.html
+│   ├── gallery
+│   │   ├── access_denied.html
+│   │   ├── client_dashboard.html
+│   │   ├── dashboard.html
+│   │   ├── detail.html
+│   │   ├── gallery_access.html
+│   │   ├── gallery_analytics.html
+│   │   ├── gallery_confirm_delete.html
+│   │   ├── gallery_form.html
+│   │   ├── gallery_invites.html
+│   │   ├── gallery_manage.html
+│   │   ├── gallery_settings.html
+│   │   ├── includes
+│   │   │   └── user_tags_widget.html
+│   │   ├── landing.html
+│   │   └── login.html
+│   └── users
+│       ├── login.html
+│       └── signup.html
+└── users
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── forms.py
+    ├── migrations
+    │   ├── 0001_initial.py
+    │   └── __init__.py
+    ├── models.py
+    ├── urls.py
+    └── views.py
+
+==================================================
+
+FILE CONTENTS:
+==============
+
+path: .gitignore
+```
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+venv/
+
+.idea/
+.vscode/
+
+.env
+
+plan.md
+
+```
+------------------------------
+
+path: manage.py
+```
+import os
+import sys
+def main():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lumen.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError() from exc
+    execute_from_command_line(sys.argv)
+if __name__ == '__main__':
+    main()
+```
+------------------------------
+
+path: README.md
+```
+# LUMEN | Gallery Management System
+
+![Status](https://img.shields.io/badge/Status-Stable-success?style=for-the-badge)
+![Stack](https://img.shields.io/badge/Django-5.0%20%7C%20Tailwind-black?style=for-the-badge)
+
+**Lumen** — профессиональный сервис для фотографов, предназначенный для управления процессом отбора фотографий (Likedown). Забудьте о списках номеров файлов в мессенджерах — предоставьте клиенту удобный и красивый интерфейс.
+
+---
+
+## 🛠 Технологический стек
+
+*   **Backend:** Python 3.13, Django 5.0 (ORM Aggregations, Custom Auth)
+*   **Frontend:** Tailwind CSS (Custom Design), JavaScript (Fetch API, SortableJS)
+*   **Database:** SQLite (Development) / PostgreSQL (Production ready)
+*   **Analytics:** Chart.js + Django ORM
+
+---
+
+## 📸 Основные возможности
+
+*   **Role-Based Access:** Четкое разделение на Фотографов и Клиентов.
+*   **Smart Limits:** Установка персональных и общих лимитов на выбор фото.
+*   **Live Analytics:** Визуализация активности клиентов через интерактивные графики.
+*   **Mass Upload:** Быстрая загрузка сотен фотографий в один клик.
+
+---
+
+## 🚀 Запуск локально
+
+1.  **Клонирование репозитория:**
+    ```bash
+    git clone https://github.com/maria-antonova616/Lumen.git
+    cd Lumen
+    ```
+
+2.  **Настройка окружения:**
+    ```bash
+    py -3.13 -m venv venv
+    # Windows:
+    venv\Scripts\activate
+    ```
+
+3.  **Установка зависимостей:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Подготовка базы данных:**
+    ```bash
+    python manage.py migrate
+    ```
+
+5.  **Создание Администратора:**
+    ```bash
+    python manage.py createsuperuser
+    ```
+
+6.  **Запуск сервера:**
+    ```bash
+    python manage.py runserver
+    ```
+    Проект будет доступен по адресу: `http://127.0.0.1:8000`
+
+---
+
+## 📝 Учетные данные для демо (при деплое)
+
+*   **Admin:** `admin` / `admin123`
+*   **Photographer:** `demo_photo` / `pass123`
+*   **Client:** `demo_client` / `pass123`
+
+```
+------------------------------
+
+path: requirements.txt
+```
+django>=5.0
+pillow
+django-crispy-forms
+crispy-bootstrap5
+requests
+pandas
+matplotlib
+python-dotenv
+
+```
+------------------------------
+
+path: TZ.md
+```
+# Техническое Задание (Technical Specification)
+
+## 1. Паспорт проекта
+*   **Название:** LUMEN | Likedown Gallery System
+*   **Концепция:** SaaS-платформа для профессиональных фотографов, позволяющая автоматизировать процесс отбора фотографий клиентами. Система решает проблему хаотичного сбора обратной связи через мессенджеры, предоставляя структурированный интерфейс с контролем лимитов и дедлайнов.
+
+## 2. Ролевая модель
+1.  **Фотограф (Owner):** Обладает полным контролем над своими галереями. Может загружать контент, устанавливать лимиты выбора (например, "выбрать 20 фото из 100"), задавать сроки доступа и просматривать аналитику по действиям клиентов.
+2.  **Клиент (User):** Конечный потребитель контента. Имеет доступ к галереям по приглашению. Может просматривать фото, отмечать выбранные снимки (лайки) и оставлять комментарии к ретуши. Действия ограничены установленными фотографом лимитами.
+3.  **Администратор (Superuser):** Технический персонал, осуществляющий глобальный контроль над пользователями и данными через Django Admin.
+
+## 3. Архитектура данных
+Проект реализован на базе Django ORM со следующими ключевыми моделями:
+*   **CustomUser:** Расширенная модель пользователя. Поле `role` (PHOTOGRAPHER/CLIENT) определяет доступный интерфейс и права.
+*   **Gallery:** Основная сущность проекта. Хранит метаданные (название, сроки) и настройки ограничений (`max_selection_count`, `total_selection_limit`).
+*   **Photo:** Модель для хранения изображений. Связана с галереей через ForeignKey. Поддерживает порядковые номера для сортировки.
+*   **ClientChoice:** Связующая таблица для реализации логики отбора. Хранит информацию о лайках, просмотрах и комментариях конкретного клиента к конкретному фото.
+*   **GalleryAccess:** Система прав, регулирующая доступ пользователей к приватным галереям.
+
+## 4. Пользовательские сценарии
+1.  **Создание и наполнение:** Фотограф создает новую галерею "Wedding 2026", устанавливает лимит в 50 фото и загружает снимки через Mass Upload интерфейс.
+2.  **Управление доступом:** Фотограф генерирует уникальную UUID-ссылку (инвайт) для клиента или добавляет его в список доступа по логину.
+3.  **Интерактивный отбор:** Клиент открывает галерею и выбирает понравившиеся фото. Система асинхронно (Fetch API) проверяет лимиты. При достижении предела в 50 фото, попытка поставить новый лайк блокируется с уведомлением.
+4.  **Мониторинг:** Фотограф открывает аналитику галереи и видит графики активности клиентов (Chart.js) и список кадров, готовых к обработке.
+
+## 5. Техническая сложность и Стек
+*   **Стек:** Python 3.13, Django 5.0, Tailwind CSS, JavaScript (Vanilla).
+*   **Сложность:** Использование **Django ORM Aggregation** (`annotate`, `Count`, `Q objects`) позволяет производить сложные расчеты KPI и статистики на лету без использования внешних библиотек обработки данных.
+*   **UX/UI:** Реализован бесшовный интерфейс отбора фотографий с использованием Fetch API и динамической визуализации данных через **Chart.js**.
+
+```
+------------------------------
+
+path: gallery\admin.py
+```
+from django.contrib import admin
+from .models import Gallery, Photo, ClientChoice, ProcessingStage, GalleryAccess, GalleryInvite
+class PhotoInline(admin.TabularInline):
+    model = Photo
+    extra = 0
+    readonly_fields = ('thumbnail_preview',)
+    def thumbnail_preview(self, obj):
+        from django.utils.html import mark_safe
+        if obj.image:
+            return mark_safe(f'<img src="{obj.image.url}" width="100" />')
+        return ""
+class ProcessingStageInline(admin.TabularInline):
+    model = ProcessingStage
+    extra = 1
+class GalleryAccessInline(admin.TabularInline):
+    model = GalleryAccess
+    extra = 1
+    autocomplete_fields = ['user']
+class GalleryInviteInline(admin.TabularInline):
+    model = GalleryInvite
+    extra = 0
+    readonly_fields = ('token', 'usage_count', 'created_at')
+@admin.register(Gallery)
+class GalleryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'photographer', 'is_public', 'created_at', 'expires_at', 'is_active')
+    search_fields = ('title', 'photographer__username')
+    list_filter = ('created_at', 'photographer', 'is_public', 'is_active')
+    inlines = [GalleryAccessInline, GalleryInviteInline, ProcessingStageInline, PhotoInline]
+@admin.register(Photo)
+class PhotoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'gallery', 'sequence_number', 'status')
+    list_filter = ('gallery', 'status')
+    search_fields = ('gallery__title',)
+@admin.register(ClientChoice)
+class ClientChoiceAdmin(admin.ModelAdmin):
+    list_display = ('photo', 'client', 'is_liked', 'timestamp')
+    list_filter = ('is_liked', 'timestamp', 'client')
+@admin.register(ProcessingStage)
+class ProcessingStageAdmin(admin.ModelAdmin):
+    list_display = ('gallery', 'name', 'completed', 'order')
+    list_editable = ('completed',)
+@admin.register(GalleryAccess)
+class GalleryAccessAdmin(admin.ModelAdmin):
+    list_display = ('user', 'gallery', 'role', 'joined_at')
+    list_filter = ('role', 'gallery')
+@admin.register(GalleryInvite)
+class GalleryInviteAdmin(admin.ModelAdmin):
+    list_display = ('gallery', 'role', 'usage_count', 'usage_limit', 'created_at')
+    list_filter = ('role', 'gallery')
+```
+------------------------------
+
+path: gallery\apps.py
+```
+from django.apps import AppConfig
+class GalleryConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'gallery'
+```
+------------------------------
+
+path: gallery\forms.py
+```
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import ClientChoice, Gallery, GalleryInvite
+from users.models import CustomUser
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+class GallerySettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.expires_at:
+            self.initial['expires_at'] = self.instance.expires_at.strftime('%Y-%m-%dT%H:%M')
+
+    class Meta:
+        model = Gallery
+        fields = [
+            'title', 'expires_at', 'total_selection_limit', 'max_selection_count', 'is_active',
+            'is_common_likes', 'clients_see_others', 'viewers_see_likes'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-white'}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-white', 'type': 'datetime-local'}),
+            'total_selection_limit': forms.NumberInput(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-white'}),
+            'max_selection_count': forms.NumberInput(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-white'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5'}),
+            'is_common_likes': forms.CheckboxInput(attrs={'class': 'w-5 h-5'}),
+            'clients_see_others': forms.CheckboxInput(attrs={'class': 'w-5 h-5'}),
+            'viewers_see_likes': forms.CheckboxInput(attrs={'class': 'w-5 h-5'}),
+        }
+        labels = {
+            'is_common_likes': 'Включить режим "Общие лайки"',
+            'clients_see_others': 'Клиенты видят лайки друг друга',
+            'viewers_see_likes': 'Зрители видят счетчик лайков'
+        }
+class GalleryAccessForm(forms.ModelForm):
+    users_data = forms.CharField(widget=forms.HiddenInput(), required=False)
+    class Meta:
+        model = Gallery
+        fields = ['is_public']
+        widgets = {
+            'is_public': forms.CheckboxInput(attrs={'class': 'w-5 h-5'}),
+        }
+class InviteCreateForm(forms.ModelForm):
+    class Meta:
+        model = GalleryInvite
+        fields = ['role', 'usage_limit']
+        widgets = {
+            'role': forms.Select(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none'}),
+            'usage_limit': forms.NumberInput(attrs={'class': 'w-full bg-white text-black border border-gray-300 p-2.5 rounded-sm focus:outline-none'})
+        }
+class PhotoUploadForm(forms.Form):
+    images = forms.FileField(
+        widget=MultipleFileInput(attrs={'multiple': True, 'class': 'hidden', 'id': 'file-upload', 'accept': 'image/*'}),
+        label="Фотографии", required=True
+    )
+class ClientChoiceForm(forms.ModelForm):
+    class Meta:
+        model = ClientChoice
+        fields = ['comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={'rows': 3, 'class': 'w-full bg-white text-black border border-gray-300 p-2 rounded-sm', 'placeholder': 'Например: кадрировать...'})
+        }
+
+```
+------------------------------
+
+path: gallery\models.py
+```
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+import uuid
+class Gallery(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Название")
+    photographer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="photographer_galleries",
+        verbose_name="Фотограф"
+    )
+    is_public = models.BooleanField(default=False, verbose_name="Публичный доступ")
+    is_active = models.BooleanField(default=True, verbose_name="Активна (прием лайков)")
+    is_common_likes = models.BooleanField(default=False, verbose_name="Общие лайки")
+    clients_see_others = models.BooleanField(default=False, verbose_name="Клиенты видят чужие")
+    viewers_see_likes = models.BooleanField(default=False, verbose_name="Зрители видят лайки")
+    max_selection_count = models.PositiveIntegerField(default=30, verbose_name="Лимит выбора (на человека)")
+    total_selection_limit = models.PositiveIntegerField(default=0, verbose_name="Общий лимит")
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(verbose_name="Срок действия")
+    def __str__(self):
+        return self.title
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+class GalleryAccess(models.Model):
+    ROLE_CHOICES = [
+        ('CLIENT', 'Клиент (Выбор фото)'),
+        ('VIEWER', 'Зритель (Только просмотр)'),
+    ]
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name='access_list')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gallery_accesses')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='VIEWER')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    last_viewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Последний просмотр")
+    class Meta:
+        unique_together = ('gallery', 'user')
+class GalleryInvite(models.Model):
+    ROLE_CHOICES = [
+        ('CLIENT', 'Клиент (Выбор фото)'),
+        ('VIEWER', 'Зритель (Только просмотр)'),
+    ]
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name='invites')
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='VIEWER')
+    usage_limit = models.PositiveIntegerField(default=0)
+    usage_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    @property
+    def is_valid(self):
+        if self.usage_limit > 0 and self.usage_count >= self.usage_limit:
+            return False
+        return True
+class Photo(models.Model):
+    STATUS_CHOICES = [
+        ('UNVIEWED', 'Не просмотрено'),
+        ('APPROVED', 'Одобрено'),
+        ('PROCESSING', 'В обработке'),
+        ('READY', 'Готово'),
+    ]
+    gallery = models.ForeignKey(Gallery, related_name='photos', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='photos/%Y/%m/%d/')
+    thumbnail = models.ImageField(upload_to='photos/thumbs/', blank=True, null=True)
+    sequence_number = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UNVIEWED')
+    photographer_note = models.TextField(blank=True, verbose_name="Примечание фотографа")
+
+    class Meta:
+        ordering = ['sequence_number']
+class ClientChoice(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='choice')
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="client_choices")
+    is_liked = models.BooleanField(default=False)
+    is_viewed = models.BooleanField(default=False)
+    comment = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('photo', 'client')
+class ProcessingStage(models.Model):
+    gallery = models.ForeignKey(Gallery, related_name='stages', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    completed = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering = ['order']
+```
+------------------------------
+
+path: gallery\urls.py
+```
+from django.urls import path
+from . import views
+urlpatterns = [
+    path('', views.landing, name='landing'),
+    path('photographer/dashboard/', views.dashboard, name='dashboard'),
+    path('client/dashboard/', views.client_dashboard, name='client_dashboard'),
+    path('photographer/gallery/<int:pk>/analytics/', views.gallery_analytics, name='gallery_analytics'),
+    path('author/<int:author_id>/gallery/<int:pk>/', views.gallery_detail, name='gallery_detail'),
+    path('photographer/gallery/new/', views.GalleryCreateView.as_view(), name='gallery_create'),
+    path('photographer/gallery/<int:pk>/settings/', views.gallery_settings, name='gallery_settings'),
+    path('photographer/gallery/<int:pk>/access/', views.gallery_access, name='gallery_access'),
+    path('photographer/gallery/<int:pk>/delete/', views.gallery_delete, name='gallery_delete'),
+    path('author/<int:author_id>/gallery/<int:pk>/upload/', views.gallery_upload_photos, name='gallery_upload'),
+    path('photo/<int:pk>/delete/', views.photo_delete, name='photo_delete'),
+    path('api/check_user/', views.check_username_api, name='check_username_api'),
+    path('api/reorder_photos/', views.reorder_photos_api, name='reorder_photos_api'),
+    path('api/like/<int:photo_id>/', views.toggle_like, name='toggle_like'),
+    path('api/track_view/<int:photo_id>/', views.track_photo_view, name='track_photo_view'),
+    path('api/comment/<int:photo_id>/', views.save_comment, name='save_comment'),
+    path('api/note/<int:photo_id>/', views.save_photographer_note, name='save_note'),
+    path('invite/<uuid:token>/', views.accept_invite, name='accept_invite'),
+]
+```
+------------------------------
+
+path: gallery\views.py
+```
+import io, json, os
+import urllib, base64
+import matplotlib.pyplot as plt
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy, reverse
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_POST, require_GET
+from django.db.models import Max, Count, Sum, Q, Prefetch
+from django.db.models.functions import TruncDate
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
+from django.contrib import messages
+from .models import Gallery, Photo, ClientChoice, GalleryAccess, GalleryInvite
+from .forms import GallerySettingsForm, GalleryAccessForm, PhotoUploadForm, InviteCreateForm
+from users.models import CustomUser
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import CreateView
+@login_required
+def check_username_api(request):
+    username = request.GET.get('username', '').strip()
+    exists = CustomUser.objects.filter(username=username).exists()
+    return JsonResponse({'exists': exists})
+@require_POST
+@login_required
+def reorder_photos_api(request):
+    try:
+        data = json.loads(request.body)
+        order_map = data.get('order', [])
+        if not order_map: return JsonResponse({'status': 'ok'})
+        first_photo = Photo.objects.get(pk=order_map[0])
+        if first_photo.gallery.photographer != request.user and not request.user.is_superuser:
+            return JsonResponse({'error': 'Forbidden'}, status=403)
+        photos_to_update = [Photo(id=pid, sequence_number=i) for i, pid in enumerate(order_map)]
+        Photo.objects.bulk_update(photos_to_update, ['sequence_number'])
+        return JsonResponse({'status': 'ok'})
+    except Exception as e: return JsonResponse({'error': str(e)}, status=400)
+@require_POST
+@login_required
+def track_photo_view(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    choice, created = ClientChoice.objects.get_or_create(photo=photo, client=request.user)
+    if not choice.is_viewed:
+        choice.is_viewed = True
+        choice.save()
+    return JsonResponse({'status': 'ok'})
+def landing(request): return render(request, 'gallery/landing.html')
+@require_POST
+@login_required
+def save_photographer_note(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    if photo.gallery.photographer != request.user and not request.user.is_superuser:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    data = json.loads(request.body)
+    note = data.get('note', '').strip()
+    photo.photographer_note = note
+    photo.save()
+    return JsonResponse({'status': 'ok'})
+
+@require_POST
+@login_required
+def save_comment(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    data = json.loads(request.body)
+    comment = data.get('comment', '').strip()
+    choice, created = ClientChoice.objects.get_or_create(photo=photo, client=request.user)
+    choice.comment = comment
+    choice.save()
+    return JsonResponse({'status': 'ok'})
+
+def check_gallery_expiration(gallery):
+    if gallery.is_active and gallery.is_expired:
+        gallery.is_active = False
+        gallery.save()
+    return gallery.is_active
+
+@login_required
+def dashboard(request):
+    if request.user.role == CustomUser.Role.CLIENT: return redirect('client_dashboard')
+    if request.user.role != CustomUser.Role.PHOTOGRAPHER and not request.user.is_superuser: return HttpResponseForbidden()
+    
+    galleries_qs = Gallery.objects.filter(photographer=request.user)
+    for g in galleries_qs:
+        check_gallery_expiration(g)
+        
+    include_author = request.GET.get('include_author') == 'true'
+    likes_filter = Q(photos__choice__is_liked=True)
+    if not include_author:
+        likes_filter &= ~Q(photos__choice__client=request.user)
+    
+    galleries = Gallery.objects.filter(photographer=request.user).annotate(
+        total_likes_count=Count('photos__choice', filter=likes_filter)
+    ).order_by('-created_at')
+    
+    total_galleries = galleries.count()
+    total_likes_global = sum(g.total_likes_count for g in galleries)
+    top_galleries = sorted(galleries, key=lambda x: x.total_likes_count, reverse=True)[:5]
+    chart_top_labels = [g.title for g in top_galleries]
+    chart_top_data = [g.total_likes_count for g in top_galleries]
+    active_count = galleries.filter(is_active=True).count()
+    inactive_count = total_galleries - active_count
+    chart_status_data = [active_count, inactive_count]
+    context = {
+        'galleries': galleries,
+        'total_galleries': total_galleries,
+        'total_likes_global': total_likes_global,
+        'include_author': include_author,
+        'chart_top_labels': json.dumps(chart_top_labels),
+        'chart_top_data': json.dumps(chart_top_data),
+        'chart_status_data': json.dumps(chart_status_data),
+    }
+    return render(request, 'gallery/dashboard.html', context)
+@login_required
+def gallery_analytics(request, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer != request.user and not request.user.is_superuser:
+        return HttpResponseForbidden()
+    include_author = request.GET.get('include_author') == 'true'
+    cc_filter = Q(photo__gallery=gallery)
+    if not include_author:
+        cc_filter &= ~Q(client=request.user)
+    access_filter = Q(gallery=gallery, last_viewed_at__isnull=False)
+    if not include_author:
+        access_filter &= ~Q(user=request.user)
+    total_photos = gallery.photos.count()
+    unique_selected = ClientChoice.objects.filter(cc_filter, is_liked=True).values('photo').distinct().count()
+    viewed_ids = set(ClientChoice.objects.filter(cc_filter, is_viewed=True).values_list('photo', flat=True))
+    liked_ids = set(ClientChoice.objects.filter(cc_filter, is_liked=True).values_list('photo', flat=True))
+    just_viewed_count = len(viewed_ids - liked_ids)
+    unviewed_count = total_photos - unique_selected - just_viewed_count
+    if unviewed_count < 0: unviewed_count = 0
+    viewers_list = GalleryAccess.objects.filter(access_filter).select_related('user').order_by('-last_viewed_at')
+    likers_ids = ClientChoice.objects.filter(cc_filter, is_liked=True).values_list('client', flat=True).distinct()
+    likers_users = CustomUser.objects.filter(id__in=likers_ids)
+    likers_data = []
+    for user in likers_users:
+        count = ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).count()
+        likers_data.append({'user': user, 'count': count})
+    likers_data.sort(key=lambda x: x['count'], reverse=True)
+    liked_photos_map = set(ClientChoice.objects.filter(cc_filter, is_liked=True).values_list('photo_id', flat=True))
+    import os
+    photos_qs = gallery.photos.all().order_by('sequence_number').prefetch_related('choice__client')
+    photos_data = []
+    for p in photos_qs:
+        choices = p.choice.exclude(comment='')
+        comment_list = [f"{c.client.username}: {c.comment}" for c in choices]
+        all_comments = " | ".join(comment_list)
+        photos_data.append({
+            'id': p.id,
+            'thumbnail': p.thumbnail.url if p.thumbnail else p.image.url,
+            'full_url': p.image.url,
+            'sequence_number': p.sequence_number,
+            'is_liked': p.id in liked_photos_map,
+            'comment': all_comments,
+            'filename': os.path.basename(p.image.name)
+        })
+    # Activity Chart Data (Likes, Views, Comments)
+    activity_likes = ClientChoice.objects.filter(cc_filter, is_liked=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    activity_views = ClientChoice.objects.filter(cc_filter, is_viewed=True).annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    activity_comments = ClientChoice.objects.filter(cc_filter).exclude(comment='').annotate(date=TruncDate('timestamp')).values('date').annotate(count=Count('id')).order_by('date')
+    
+    # Merge dates for chart
+    all_dates = sorted(list(set(
+        [item['date'] for item in activity_likes] + 
+        [item['date'] for item in activity_views] + 
+        [item['date'] for item in activity_comments]
+    )))
+    
+    def get_count_for_date(qs, date):
+        for item in qs:
+            if item['date'] == date: return item['count']
+        return 0
+
+    chart_likes = [get_count_for_date(activity_likes, d) for d in all_dates]
+    chart_views = [get_count_for_date(activity_views, d) for d in all_dates]
+    chart_comments = [get_count_for_date(activity_comments, d) for d in all_dates]
+
+    # Global Activity Log (Views, Likes, Comments)
+    activity_log = ClientChoice.objects.filter(cc_filter).select_related('client', 'photo').order_by('-timestamp')
+    
+    # Global Comments List
+    all_comments_list = activity_log.exclude(comment='')
+
+    top_filter = Q(choice__is_liked=True)
+    if not include_author:
+        top_filter &= ~Q(choice__client=request.user)
+    top_photos_qs = gallery.photos.annotate(
+        likes_count=Count('choice', filter=top_filter)
+    ).filter(likes_count__gt=0).order_by('-likes_count')[:10]
+    top_labels = [f"#{p.sequence_number}" for p in top_photos_qs]
+    top_data = [p.likes_count for p in top_photos_qs]
+    context = {
+        'gallery': gallery,
+        'total_photos': total_photos,
+        'selected_count': unique_selected,
+        'viewed_count': just_viewed_count,
+        'unviewed_count': unviewed_count,
+        'photos_data': photos_data,
+        'viewers_list': viewers_list,
+        'likers_data': likers_data,
+        'include_author': include_author,
+        'top_labels': json.dumps(top_labels),
+        'top_data': json.dumps(top_data),
+        'all_comments_list': all_comments_list,
+        'activity_log': activity_log,
+        'activity_dates': json.dumps(all_dates, cls=DjangoJSONEncoder),
+        'activity_likes': json.dumps(chart_likes),
+        'activity_views': json.dumps(chart_views),
+        'activity_comments': json.dumps(chart_comments),
+    }
+    return render(request, 'gallery/gallery_analytics.html', context)
+@login_required
+def client_dashboard(request):
+    if request.user.role != CustomUser.Role.CLIENT: return redirect('dashboard')
+    accesses = GalleryAccess.objects.filter(user=request.user, gallery__is_active=True)
+    return render(request, 'gallery/client_dashboard.html', {'accesses': accesses})
+@login_required
+def gallery_detail(request, author_id, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer.id != author_id: return HttpResponseForbidden("Неверная ссылка")
+    
+    check_gallery_expiration(gallery)
+    
+    user = request.user
+    is_owner = (user == gallery.photographer or user.is_superuser)
+    can_view = False
+    can_like = False
+    role_name = "Гость"
+    if is_owner:
+        can_view = True
+        can_like = True
+        role_name = "Владелец"
+    elif gallery.is_public:
+        can_view = True
+        role_name = "Публичный"
+    access = GalleryAccess.objects.filter(gallery=gallery, user=user).first()
+    if access:
+        can_view = True
+        role_name = access.get_role_display()
+        if access.role == 'CLIENT': can_like = True
+        access.last_viewed_at = timezone.now()
+        access.save()
+    if not can_view: return render(request, 'gallery/access_denied.html', status=403)
+    can_see_others = False
+    if is_owner: can_see_others = True
+    elif gallery.viewers_see_likes: can_see_others = True
+    elif access and access.role == 'CLIENT':
+        if gallery.is_common_likes or gallery.clients_see_others: can_see_others = True
+    photos = gallery.photos.all()
+    view_filter = request.GET.get('filter', 'ALL')
+    if gallery.is_common_likes:
+        my_likes_ids = set(ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values_list('photo_id', flat=True))
+    else:
+        my_likes_ids = set(ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).values_list('photo_id', flat=True))
+    
+    photos = photos.prefetch_related('choice__client')
+    
+    others_likes_map = {}
+    if can_see_others:
+        counts = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo_id').annotate(count=Count('id'))
+        for item in counts: others_likes_map[item['photo_id']] = item['count']
+    if view_filter == 'LIKED':
+        if is_owner and not gallery.is_common_likes:
+            client_filter_id = request.GET.get('client_id')
+            if client_filter_id:
+                photos = photos.filter(choice__client_id=client_filter_id, choice__is_liked=True)
+            else:
+                photos = photos.filter(choice__is_liked=True).distinct()
+        else:
+            photos = photos.filter(id__in=my_likes_ids)
+    photo_states = {}
+    for photo in photos:
+        is_liked_by_me = photo.id in my_likes_ids
+        total_count = others_likes_map.get(photo.id, 0)
+        if not can_see_others: total_count = 1 if is_liked_by_me else 0
+        show_count = False
+        if gallery.is_common_likes:
+            if not can_like and can_see_others and total_count > 0: show_count = True
+        else:
+            if can_see_others and total_count > 0: show_count = True
+        photo_states[photo.id] = {'liked_by_me': is_liked_by_me, 'total_likes': total_count, 'show_count': show_count}
+    clients_with_likes = []
+    if is_owner:
+        clients_with_likes = CustomUser.objects.filter(client_choices__photo__gallery=gallery, client_choices__is_liked=True).distinct()
+    context = {
+        'gallery': gallery,
+        'photos': photos,
+        'photo_states': photo_states,
+        'liked_count': len(my_likes_ids),
+        'is_owner': is_owner,
+        'can_like': can_like and gallery.is_active,
+        'role_name': role_name,
+        'upload_form': PhotoUploadForm() if is_owner else None,
+        'view_filter': view_filter,
+        'clients_with_likes': clients_with_likes,
+        'current_client_id': int(request.GET.get('client_id')) if request.GET.get('client_id') else None
+    }
+    return render(request, 'gallery/detail.html', context)
+@require_POST
+@login_required
+def toggle_like(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    gallery = photo.gallery
+    user = request.user
+    if not gallery.is_active and user != gallery.photographer: return JsonResponse({'error': 'Gallery is closed'}, status=403)
+    is_owner = (user == gallery.photographer or user.is_superuser)
+    access = GalleryAccess.objects.filter(gallery=gallery, user=user).first()
+    can_like = is_owner or (access and access.role == 'CLIENT')
+    if not can_like: return JsonResponse({'error': 'Forbidden'}, status=403)
+    if gallery.is_expired: return JsonResponse({'error': 'Expired'}, status=403)
+    choice, created = ClientChoice.objects.get_or_create(photo=photo, client=user)
+    if not choice.is_viewed: choice.is_viewed = True; choice.save()
+    if gallery.is_common_likes:
+        is_already_selected = ClientChoice.objects.filter(photo=photo, is_liked=True).exists()
+        if is_already_selected:
+            ClientChoice.objects.filter(photo=photo).delete()
+            is_liked_now = False
+        else:
+            if gallery.total_selection_limit > 0:
+                total = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo').distinct().count()
+                if total >= gallery.total_selection_limit: return JsonResponse({'error': 'Total limit reached'}, status=400)
+            ClientChoice.objects.create(photo=photo, client=user, is_liked=True, is_viewed=True)
+            is_liked_now = True
+        total_count = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).values('photo').distinct().count()
+        return JsonResponse({'liked': is_liked_now, 'my_total_count': total_count, 'photo_total_likes': 1 if is_liked_now else 0, 'can_see_others': True})
+    else:
+        if not choice.is_liked:
+            user_likes = ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).count()
+            if user_likes >= gallery.max_selection_count: return JsonResponse({'error': 'Personal limit reached'}, status=400)
+            if gallery.total_selection_limit > 0:
+                total = ClientChoice.objects.filter(photo__gallery=gallery, is_liked=True).count()
+                if total >= gallery.total_selection_limit: return JsonResponse({'error': 'Gallery total limit reached'}, status=400)
+        choice.is_liked = not choice.is_liked
+        choice.save()
+        can_see_others = False
+        if is_owner: can_see_others = True
+        elif gallery.viewers_see_likes: can_see_others = True
+        elif access and access.role == 'CLIENT' and gallery.clients_see_others: can_see_others = True
+        my_total = ClientChoice.objects.filter(photo__gallery=gallery, client=user, is_liked=True).count()
+        photo_total = ClientChoice.objects.filter(photo=photo, is_liked=True).count() if can_see_others else (1 if choice.is_liked else 0)
+        return JsonResponse({'liked': choice.is_liked, 'my_total_count': my_total, 'photo_total_likes': photo_total, 'can_see_others': can_see_others})
+@login_required
+def gallery_upload_photos(request, author_id, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if request.method == 'POST':
+        images = request.FILES.getlist('images')
+        if images:
+            last_seq = gallery.photos.aggregate(Max('sequence_number'))['sequence_number__max'] or 0
+            for i, image in enumerate(images):
+                p = Photo(gallery=gallery, image=image, sequence_number=last_seq + i + 1, status='UNVIEWED')
+                p.save()
+            messages.success(request, f'Загружено {len(images)} фото.')
+    return redirect('gallery_detail', author_id=author_id, pk=pk)
+@login_required
+def photo_delete(request, pk):
+    photo = get_object_or_404(Photo, pk=pk)
+    gallery = photo.gallery
+    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if request.method == 'POST': photo.delete(); messages.success(request, 'Фото удалено.')
+    return redirect('gallery_detail', author_id=gallery.photographer.id, pk=gallery.id)
+class GalleryCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Gallery
+    form_class = GallerySettingsForm
+    template_name = 'gallery/gallery_settings.html'
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs); ctx['is_create'] = True; ctx['access_form'] = GalleryAccessForm(self.request.POST or None); return ctx
+    def form_valid(self, form):
+        ctx = self.get_context_data()
+        if ctx['access_form'].is_valid():
+            self.object = form.save(commit=False); self.object.photographer = self.request.user; self.object.is_public = ctx['access_form'].cleaned_data['is_public']; self.object.save()
+            users_data = ctx['access_form'].cleaned_data.get('users_data', '')
+            if users_data:
+                for uname in [u.strip() for u in users_data.split(',') if u.strip()]:
+                    try: u = CustomUser.objects.get(username=uname); GalleryAccess.objects.get_or_create(gallery=self.object, user=u, defaults={'role': 'CLIENT'})
+                    except: pass
+            messages.success(self.request, 'Создано.'); return redirect('gallery_detail', author_id=self.request.user.id, pk=self.object.pk)
+        return self.render_to_response(self.get_context_data(form=form))
+    def test_func(self): return self.request.user.role == CustomUser.Role.PHOTOGRAPHER or self.request.user.is_superuser
+@login_required
+def gallery_settings(request, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if request.method == 'POST':
+        form = GallerySettingsForm(request.POST, instance=gallery)
+        if form.is_valid(): form.save(); messages.success(request, 'Сохранено'); return redirect('dashboard')
+    else: form = GallerySettingsForm(instance=gallery)
+    return render(request, 'gallery/gallery_settings.html', {'form': form, 'gallery': gallery, 'is_create': False})
+@login_required
+def gallery_access(request, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if request.method == 'POST' and 'access_submit' in request.POST:
+        f = GalleryAccessForm(request.POST, instance=gallery)
+        if f.is_valid():
+            f.save()
+            users_data = f.cleaned_data.get('users_data', '')
+            if users_data:
+                for uname in [u.strip() for u in users_data.split(',') if u.strip()]:
+                    try: u = CustomUser.objects.get(username=uname); GalleryAccess.objects.get_or_create(gallery=gallery, user=u, defaults={'role': 'CLIENT'})
+                    except: pass
+            messages.success(request, 'Обновлено.'); return redirect('gallery_access', pk=pk)
+    if request.method == 'POST' and 'invite_submit' in request.POST:
+        f = InviteCreateForm(request.POST)
+        if f.is_valid(): i = f.save(commit=False); i.gallery = gallery; i.save(); messages.success(request, 'Ссылка создана.'); return redirect('gallery_access', pk=pk)
+    if request.method == 'POST' and 'remove_user_access' in request.POST:
+        GalleryAccess.objects.filter(gallery=gallery, user_id=request.POST.get('remove_user_access')).delete(); return redirect('gallery_access', pk=pk)
+    if request.method == 'POST' and 'delete_invite' in request.POST:
+        GalleryInvite.objects.filter(gallery=gallery, id=request.POST.get('delete_invite')).delete(); return redirect('gallery_access', pk=pk)
+    return render(request, 'gallery/gallery_access.html', {'gallery': gallery, 'access_form': GalleryAccessForm(instance=gallery), 'invite_form': InviteCreateForm(), 'invites': gallery.invites.all(), 'access_list': gallery.access_list.all()})
+@login_required
+def gallery_delete(request, pk):
+    gallery = get_object_or_404(Gallery, pk=pk)
+    if gallery.photographer != request.user and not request.user.is_superuser: return HttpResponseForbidden()
+    if request.method == 'POST': gallery.delete(); return redirect('dashboard')
+    return render(request, 'gallery/gallery_confirm_delete.html', {'object': gallery})
+@login_required
+def accept_invite(request, token):
+    invite = get_object_or_404(GalleryInvite, token=token)
+    if not invite.is_valid: messages.error(request, 'Invalid link'); return redirect('landing')
+    if not GalleryAccess.objects.filter(gallery=invite.gallery, user=request.user).exists():
+        GalleryAccess.objects.create(gallery=invite.gallery, user=request.user, role=invite.role)
+        if invite.usage_limit > 0: invite.usage_count += 1; invite.save()
+    return redirect('gallery_detail', author_id=invite.gallery.photographer.id, pk=invite.gallery.pk)
+
+```
+------------------------------
+
+path: gallery\migrations\0001_initial.py
+```
+import uuid
+from django.db import migrations, models
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = [
+    ]
+    operations = [
+        migrations.CreateModel(
+            name='ClientChoice',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('is_liked', models.BooleanField(default=False)),
+                ('is_viewed', models.BooleanField(default=False)),
+                ('comment', models.TextField(blank=True)),
+                ('timestamp', models.DateTimeField(auto_now=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Gallery',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('title', models.CharField(max_length=200, verbose_name='Название')),
+                ('is_public', models.BooleanField(default=False, verbose_name='Публичный доступ')),
+                ('is_active', models.BooleanField(default=True, verbose_name='Активна (прием лайков)')),
+                ('is_common_likes', models.BooleanField(default=False, verbose_name='Общие лайки')),
+                ('clients_see_others', models.BooleanField(default=False, verbose_name='Клиенты видят чужие')),
+                ('viewers_see_likes', models.BooleanField(default=False, verbose_name='Зрители видят лайки')),
+                ('max_selection_count', models.PositiveIntegerField(default=30, verbose_name='Лимит выбора (на человека)')),
+                ('total_selection_limit', models.PositiveIntegerField(default=0, verbose_name='Общий лимит')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('expires_at', models.DateTimeField(verbose_name='Срок действия')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='GalleryAccess',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('role', models.CharField(choices=[('CLIENT', 'Клиент (Выбор фото)'), ('VIEWER', 'Зритель (Только просмотр)')], default='VIEWER', max_length=20)),
+                ('joined_at', models.DateTimeField(auto_now_add=True)),
+                ('last_viewed_at', models.DateTimeField(blank=True, null=True, verbose_name="Последний просмотр")),
+            ],
+        ),
+        migrations.CreateModel(
+            name='GalleryInvite',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('token', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
+                ('role', models.CharField(choices=[('CLIENT', 'Клиент (Выбор фото)'), ('VIEWER', 'Зритель (Только просмотр)')], default='VIEWER', max_length=20)),
+                ('usage_limit', models.PositiveIntegerField(default=0)),
+                ('usage_count', models.PositiveIntegerField(default=0)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Photo',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('image', models.ImageField(upload_to='photos/%Y/%m/%d/')),
+                ('thumbnail', models.ImageField(blank=True, null=True, upload_to='photos/thumbs/')),
+                ('sequence_number', models.PositiveIntegerField(default=0)),
+                ('status', models.CharField(choices=[('UNVIEWED', 'Не просмотрено'), ('APPROVED', 'Одобрено'), ('PROCESSING', 'В обработке'), ('READY', 'Готово')], default='UNVIEWED', max_length=20)),
+            ],
+            options={
+                'ordering': ['sequence_number'],
+            },
+        ),
+        migrations.CreateModel(
+            name='ProcessingStage',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100)),
+                ('completed', models.BooleanField(default=False)),
+                ('order', models.PositiveIntegerField(default=0)),
+            ],
+            options={
+                'ordering': ['order'],
+            },
+        ),
+    ]
+
+```
+------------------------------
+
+path: gallery\migrations\0002_initial.py
+```
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = [
+        ('gallery', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+    operations = [
+        migrations.AddField(
+            model_name='clientchoice',
+            name='client',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='client_choices', to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AddField(
+            model_name='gallery',
+            name='photographer',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='photographer_galleries', to=settings.AUTH_USER_MODEL, verbose_name='Фотограф'),
+        ),
+        migrations.AddField(
+            model_name='galleryaccess',
+            name='gallery',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='access_list', to='gallery.gallery'),
+        ),
+        migrations.AddField(
+            model_name='galleryaccess',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='gallery_accesses', to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AddField(
+            model_name='galleryinvite',
+            name='gallery',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invites', to='gallery.gallery'),
+        ),
+        migrations.AddField(
+            model_name='photo',
+            name='gallery',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='photos', to='gallery.gallery'),
+        ),
+        migrations.AddField(
+            model_name='clientchoice',
+            name='photo',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='choice', to='gallery.photo'),
+        ),
+        migrations.AddField(
+            model_name='processingstage',
+            name='gallery',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='stages', to='gallery.gallery'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='galleryaccess',
+            unique_together={('gallery', 'user')},
+        ),
+        migrations.AlterUniqueTogether(
+            name='clientchoice',
+            unique_together={('photo', 'client')},
+        ),
+    ]
+```
+------------------------------
+
+path: gallery\migrations\0003_photo_photographer_note.py
+```
+# Generated by Django 5.2.8 on 2026-01-16 15:44
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('gallery', '0002_initial'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='photo',
+            name='photographer_note',
+            field=models.TextField(blank=True, verbose_name='Примечание фотографа'),
+        ),
+    ]
+
+```
+------------------------------
+
+path: gallery\migrations\__init__.py
+```
+
+```
+------------------------------
+
+path: gallery\templatetags\gallery_extras.py
+```
+import os
+from django import template
+register = template.Library()
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+@register.filter
+def basename(value):
+    return os.path.basename(value)
+```
+------------------------------
+
+path: gallery\templatetags\__init__.py
+```
+
+```
+------------------------------
+
+path: lumen\asgi.py
+```
+import os
+from django.core.asgi import get_asgi_application
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lumen.settings')
+application = get_asgi_application()
+```
+------------------------------
+
+path: lumen\settings.py
+```
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
+
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    'crispy_forms',
+    
+    'gallery',
+    'users',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'lumen.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'lumen.wsgi.application'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+LANGUAGE_CODE = 'ru-ru'
+
+TIME_ZONE = 'Europe/Moscow'
+
+USE_I18N = True
+
+USE_TZ = True
+
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'landing'
+LOGOUT_REDIRECT_URL = 'landing'
+
+```
+------------------------------
+
+path: lumen\urls.py
+```
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('gallery.urls')),
+    path('users/', include('users.urls', namespace='users')),
+]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+------------------------------
+
+path: lumen\wsgi.py
+```
+import os
+from django.core.wsgi import get_wsgi_application
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lumen.settings')
+application = get_wsgi_application()
+```
+------------------------------
+
+path: lumen\__init__.py
+```
+
+```
+------------------------------
+
+path: templates\base.html
+```
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LUMEN | Likedown Gallery{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                black: '#050505',
+                white: '#FFFFFF',
+                gray: '#1F1F1F',
+                silver: '#E5E5E5'
+              }
+            },
+            fontFamily: {
+              mono: ['Courier New', 'Courier', 'monospace'],
+              sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+              'spin-slow': 'spin 3s linear infinite',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600;800&display=swap');
+      /* Custom scrollbar for dark theme */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .leather-texture {
+        background-color: #080808;
+        background-image: 
+          radial-gradient(circle at 50% 50%, #111 1px, transparent 1px),
+          radial-gradient(circle at 0% 0%, #111 1px, transparent 1px);
+        background-size: 4px 4px;
+      }
+      .noise-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 50;
+        opacity: 0.02;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+      .text-glow {
+        text-shadow: 0 0 15px rgba(255,255,255,0.15);
+      }
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-black text-white antialiased">
+    <div class="noise-bg"></div>
+    {% block content %}{% endblock %}
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>
+
+```
+------------------------------
+
+path: templates\gallery\access_denied.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-white/10 p-8 rounded shadow-2xl text-center">
+        <div class="w-16 h-16 bg-[#0a0a0a] rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+             <i data-lucide="lock" class="w-8 h-8 text-gray-500"></i>
+        </div>
+        <h2 class="text-xl font-bold uppercase tracking-widest text-white mb-2">Доступ ограничен</h2>
+        <p class="text-gray-400 text-sm mb-8 leading-relaxed">
+            Эта галерея является приватной. <br>
+            Вашего аккаунта нет в списке разрешенных, либо лимит приглашений по ссылке исчерпан.
+        </p>
+        <div class="flex flex-col gap-3">
+            <a href="{% url 'landing' %}" class="w-full py-3 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 text-xs transition-colors">
+                На главную
+            </a>
+            {% if not user.is_authenticated %}
+            <a href="{% url 'users:login' %}?next={{ request.path }}" class="w-full py-3 border border-white/20 text-white font-bold uppercase tracking-widest hover:bg-white/10 text-xs transition-colors">
+                Войти в аккаунт
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\client_dashboard.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+      <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'landing' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> На главную
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight truncate max-w-[150px] sm:max-w-none">Панель Управления Клиента</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest hidden sm:block">{{ user.username }}</span>
+          </div>
+        </div>
+      </nav>
+      <main class="flex-1 p-4 md:p-8 max-w-[1920px] mx-auto w-full">
+        <div class="bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden">
+            <div class="p-4 border-b border-white/10 bg-[#111]">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Список Доступных Галерей</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-bold uppercase tracking-widest text-gray-500 border-b border-[#222]">
+                            <th class="p-4">Название</th>
+                            <th class="p-4">Фотограф</th>
+                            <th class="p-4">Моя Роль</th>
+                            <th class="p-4">Дата входа</th>
+                            <th class="p-4 text-right">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-gray-300">
+                        {% for access in accesses %}
+                        <tr class="border-b border-[#222] hover:bg-[#0f0f0f] transition-colors">
+                            <td class="p-4 font-bold text-white">{{ access.gallery.title }}</td>
+                            <td class="p-4">{{ access.gallery.photographer.username }}</td>
+                            <td class="p-4 font-mono text-xs uppercase text-gray-400">{{ access.get_role_display }}</td>
+                            <td class="p-4 font-mono text-xs">{{ access.joined_at|date:"d.m.Y" }}</td>
+                            <td class="p-4 text-right">
+                                <a href="{% url 'gallery_detail' access.gallery.photographer.id access.gallery.id %}" class="text-xs text-white underline decoration-gray-600 hover:decoration-white underline-offset-4">Открыть</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-gray-500">Вы пока не присоединены ни к одной галерее.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </main>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\dashboard.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'landing' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Главная
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight truncate max-w-[150px] sm:max-w-none">Кабинет Фотографа</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest hidden sm:block">{{ user.username }}</span>
+          </div>
+        </div>
+        <div class="flex gap-2 md:gap-4 items-center">
+             <label class="flex items-center gap-2 cursor-pointer text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors select-none">
+                 <div class="relative">
+                     <input type="checkbox" id="authorToggle" class="sr-only peer" onchange="toggleAuthorStats(this)" {% if include_author %}checked{% endif %}>
+                     <div class="w-8 h-4 bg-gray-700 rounded-full shadow-inner transition-colors duration-200 ease-in-out peer-checked:bg-white"></div>
+                     <div class="absolute w-2 h-2 bg-white rounded-full shadow inset-y-1 left-1 transition-transform duration-200 ease-in-out peer-checked:translate-x-4 peer-checked:bg-black"></div>
+                 </div>
+                 <span class="hidden md:block">Учитывать автора</span>
+             </label>
+             <button class="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+             </button>
+        </div>
+    </nav>
+    <main class="flex-1 p-4 md:p-8 max-w-[1920px] mx-auto w-full">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+                <span class="text-xs text-gray-500 uppercase tracking-widest">Всего галерей</span>
+                <div class="text-3xl font-bold mt-2">{{ total_galleries }}</div>
+            </div>
+            <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+                <span class="text-xs text-gray-500 uppercase tracking-widest">Всего лайков</span>
+                <div class="text-3xl font-bold mt-2 text-green-400">{{ total_likes_global }}</div>
+            </div>
+            <div class="md:col-span-2 bg-[#111] border border-white/10 p-6 rounded-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-gray-500 uppercase tracking-widest">Быстрый старт</span>
+                    <div class="text-lg font-bold mt-1 text-white">Создать новый проект</div>
+                </div>
+                <a href="{% url 'gallery_create' %}" class="bg-white text-black px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Создать
+                </a>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[300px] flex flex-col">
+                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Топ-5 проектов по отклику</h3>
+                 <div class="relative w-full flex-1 min-h-0">
+                    <canvas id="barChart"></canvas>
+                 </div>
+            </div>
+            <div class="lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[300px] flex flex-col">
+                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Статус проектов</h3>
+                 <div class="relative w-full flex-1 min-h-0 flex justify-center">
+                    <canvas id="doughnutChart"></canvas>
+                 </div>
+            </div>
+        </div>
+        <div class="bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden">
+            <div class="p-4 border-b border-white/10 bg-[#111]">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Все Галереи</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-bold uppercase tracking-widest text-gray-500 border-b border-[#222]">
+                            <th class="p-4">Название</th>
+                            <th class="p-4">Лайки</th>
+                            <th class="p-4">Срок</th>
+                            <th class="p-4">Статус</th>
+                            <th class="p-4 text-right">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-gray-300">
+                        {% for gallery in galleries %}
+                        <tr class="border-b border-[#222] hover:bg-[#0f0f0f] transition-colors">
+                            <td class="p-4 font-bold text-white">
+                                <a href="{% url 'gallery_detail' gallery.photographer.id gallery.id %}" class="hover:underline">{{ gallery.title }}</a>
+                            </td>
+                            <td class="p-4 font-mono text-xs">
+                                <div class="flex items-center gap-2 leading-none">
+                                    <i data-lucide="heart" class="w-3 h-3 text-gray-500 mb-[1px]"></i> <span>{{ gallery.total_likes_count }}</span>
+                                </div>
+                            </td>
+                            <td class="p-4 font-mono">{{ gallery.expires_at|date:"d.m.Y" }}</td>
+                            <td class="p-4">
+                                {% if gallery.is_active %}<span class="text-green-500 font-bold">●</span>{% else %}<span class="text-gray-500">○</span>{% endif %}
+                            </td>
+                            <td class="p-4 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <a href="{% url 'gallery_analytics' gallery.id %}{% if include_author %}?include_author=true{% endif %}" class="inline-flex items-center justify-center text-[10px] font-bold uppercase tracking-widest bg-[#222] hover:bg-white hover:text-black text-white px-3 py-1.5 border border-white/10 transition-colors" title="Аналитика">
+                                        <i data-lucide="bar-chart-2" class="w-3 h-3 mr-1"></i> Аналитика
+                                    </a>
+                                    <a href="{% url 'gallery_access' gallery.id %}" class="inline-flex items-center justify-center text-[10px] font-bold uppercase tracking-widest bg-[#222] hover:bg-white hover:text-black text-white px-3 py-1.5 border border-white/10 transition-colors">
+                                        <i data-lucide="users" class="w-3 h-3"></i>
+                                    </a>
+                                    <a href="{% url 'gallery_settings' gallery.id %}" class="inline-flex items-center justify-center text-[10px] font-bold uppercase tracking-widest bg-[#222] hover:bg-white hover:text-black text-white px-3 py-1.5 border border-white/10 transition-colors">
+                                        <i data-lucide="settings" class="w-3 h-3"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="p-8 text-center text-gray-500">Нет галерей</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    function toggleAuthorStats(checkbox) {
+        const url = new URL(window.location);
+        if (checkbox.checked) {
+            url.searchParams.set('include_author', 'true');
+        } else {
+            url.searchParams.delete('include_author');
+        }
+        window.location.href = url.toString();
+    }
+    // Init Toasts on load
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast("{{ message }}", "{{ message.tags }}" === "error");
+            {% endfor %}
+        {% endif %}
+    });
+    const ctx = document.getElementById('barChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_top_labels|safe }},
+            datasets: [{
+                label: 'Лайки',
+                data: {{ chart_top_data|safe }},
+                backgroundColor: '#ffffff',
+                borderRadius: 2,
+                barThickness: 30
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } },
+                x: { grid: { display: false }, ticks: { color: '#999' } }
+            }
+        }
+    });
+    new Chart(document.getElementById('doughnutChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Активные', 'Закрытые'],
+            datasets: [{
+                data: {{ chart_status_data|safe }},
+                backgroundColor: ['#22c55e', '#333333'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#999', usePointStyle: true } } 
+            },
+            cutout: '70%'
+        }
+    });
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\detail.html
+```
+{% extends 'base.html' %}
+{% load gallery_extras %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="relative h-[100dvh] bg-[#0a0a0a] flex flex-col overflow-hidden font-sans text-white">
+      <header class="z-30 h-16 md:h-20 bg-[#111] border-b border-[#222] shadow-xl flex items-center justify-between px-4 md:px-8 select-none relative shrink-0">
+        <div class="flex items-center gap-4 md:gap-6 relative z-10">
+          <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-gray-200">
+             <span class="font-serif font-bold text-black text-[10px] italic tracking-tighter transform -rotate-12">L</span>
+          </div>
+          <div class="flex flex-col justify-center">
+            <h1 class="text-white text-xs md:text-xs font-bold tracking-[0.2em] uppercase truncate max-w-[120px] md:max-w-none">{{ gallery.title }}</h1>
+            <span class="text-[9px] text-gray-500 font-mono uppercase mt-0.5 hidden md:block">
+                {% if is_owner %}РЕЖИМ АВТОРА{% else %}{{ role_name }}{% endif %}
+                {% if gallery.is_common_likes %}<span class="text-green-500 ml-2">• ОБЩИЕ ЛАЙКИ</span>{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 md:gap-6 relative z-10">
+            {% if is_owner %}
+                <form id="upload-form" action="{% url 'gallery_upload' gallery.photographer.id gallery.id %}" method="post" enctype="multipart/form-data" class="flex items-center">
+                    {% csrf_token %}
+                    <label for="file-upload-input" class="cursor-pointer group flex items-center gap-2 bg-white text-black px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                        <i data-lucide="upload-cloud" class="w-3 h-3"></i><span class="hidden md:inline">Добавить фото</span>
+                    </label>
+                    <input id="file-upload-input" type="file" name="images" multiple class="hidden">
+                </form>
+            {% endif %}
+            {% if can_like or is_owner %}
+            <div class="flex flex-col items-end">
+                 <div class="bg-[#050505] w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#333] shadow-inner flex items-center justify-center relative">
+                    <span id="header-liked-count" class="font-mono text-base md:text-lg font-bold text-gray-300">{{ liked_count }}</span>
+                    {% if not is_owner %}<div class="absolute -bottom-4 text-[8px] text-gray-500 font-mono">MAX {{ gallery.max_selection_count }}</div>{% endif %}
+                 </div>
+            </div>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center border border-white/10 hover:bg-white hover:text-black transition-colors"><i data-lucide="layout-grid" class="w-4 h-4"></i></a>
+        </div>
+      </header>
+      {% if can_like or is_owner %}
+      <div class="w-full bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#222] z-20 flex flex-col shrink-0">
+            <div class="flex items-center px-4 md:px-6 h-12 md:h-14 gap-2 overflow-x-auto custom-scrollbar">
+                 <a href="?filter=ALL" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all {% if view_filter == 'ALL' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">Все фото</a>
+                 <a href="?filter=LIKED" class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 md:px-4 md:py-2 rounded border transition-all flex items-center gap-2 {% if view_filter == 'LIKED' %}bg-white text-black border-white{% else %}bg-transparent text-gray-500 border-transparent hover:text-white{% endif %}">
+                    <i data-lucide="heart" class="w-3 h-3 {% if view_filter == 'LIKED' %}fill-black{% endif %}"></i> Выбранные
+                 </a>
+            </div>
+            {% if is_owner and view_filter == 'LIKED' %}
+            <div class="flex items-center px-4 md:px-6 pb-2 md:pb-3 gap-2 overflow-x-auto custom-scrollbar">
+                <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mr-1 shrink-0">Клиент:</span>
+                <a href="?filter=LIKED" class="whitespace-nowrap text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all {% if not current_client_id %}bg-[#222] text-white border-white{% else %}bg-transparent text-gray-500 border-[#333] hover:border-gray-500{% endif %}">Все</a>
+                {% for client in clients_with_likes %}
+                <a href="?filter=LIKED&client_id={{ client.id }}" class="whitespace-nowrap text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all flex items-center gap-2 {% if current_client_id == client.id %}bg-[#222] text-white border-white{% else %}bg-transparent text-gray-500 border-[#333] hover:border-gray-500{% endif %}"><div class="w-2 h-2 rounded-full bg-green-500"></div>{{ client.username }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+      </div>
+      {% endif %}
+      <main class="flex-1 relative bg-[#0a0a0a] overflow-hidden p-2 md:p-6">
+        <div class="w-full h-full relative bg-[#050505] rounded-lg overflow-hidden border border-[#222] flex flex-col">
+           <div class="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-6">
+               <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
+                   {% for photo in photos %}
+                       {% with state=photo_states|get_item:photo.id %}
+                       <div 
+                           data-id="{{ photo.id }}" 
+                           class="relative group aspect-[3/2] bg-[#111] cursor-pointer overflow-hidden border transition-all duration-300 {% if state.liked_by_me %}border-white ring-1 ring-white{% else %}border-[#222] hover:border-gray-500{% endif %}"
+                       >
+                           <img 
+                               src="{% if photo.thumbnail %}{{ photo.thumbnail.url }}{% else %}{{ photo.image.url }}{% endif %}" 
+                               class="w-full h-full object-cover transition-transform duration-500 {% if is_owner %}group-hover:scale-105{% endif %}" 
+                               loading="lazy"
+                               onclick="openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}', {% if state.liked_by_me %}true{% else %}false{% endif %})"
+                           />
+                           {% if is_owner %}
+                           <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                               <form action="{% url 'photo_delete' photo.id %}" method="post" onsubmit="return confirm('Удалить фото безвозвратно?');">{% csrf_token %}
+                                   <button type="submit" class="bg-red-600 text-white w-6 h-6 rounded flex items-center justify-center hover:bg-red-500 shadow-md"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                               </form>
+                           </div>
+                           <div class="absolute top-0 left-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                               <span class="bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm">Drag</span>
+                           </div>
+                           {% endif %}
+                           {% if can_like %}
+                           <div class="absolute bottom-2 right-2 z-20">
+                                <button 
+                                    id="grid-btn-{{ photo.id }}"
+                                    onclick="toggleLike(event, '{{ photo.id }}')"
+                                    class="flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all shadow-lg border backdrop-blur-sm
+                                    {% if state.liked_by_me %}
+                                        bg-white text-black border-white
+                                    {% else %}
+                                        bg-black/50 text-white border-white/20 hover:bg-black/80
+                                        {% if not state.show_count %}opacity-0 group-hover:opacity-100{% endif %}
+                                    {% endif %}"
+                                >
+                                    <i data-lucide="heart" class="w-3 h-3" {% if state.liked_by_me %}fill="currentColor"{% else %}fill="none"{% endif %}></i>
+                                    <span class="text-[9px] font-bold font-mono {% if not state.show_count %}hidden{% endif %}">
+                                        {{ state.total_likes }}
+                                    </span>
+                                </button>
+                           </div>
+                           {% endif %}
+                           <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-6 pb-2 px-2 pointer-events-none"><span class="text-[10px] font-mono text-gray-400 group-hover:text-white transition-colors truncate block">{{ photo.image.name|basename }}</span></div>
+                       </div>
+                       {% endwith %}
+                   {% empty %}
+                       <div class="col-span-full h-64 flex flex-col items-center justify-center text-gray-500 gap-4"><i data-lucide="image" class="w-12 h-12 opacity-20"></i><p class="text-xs uppercase tracking-widest">{% if view_filter == 'LIKED' %}В этой категории нет фото{% else %}Галерея пуста{% endif %}</p></div>
+                   {% endfor %}
+               </div>
+               <div class="h-12 md:h-0"></div>
+           </div>
+        </div>
+      </main>
+      <div id="modal" class="hidden fixed inset-0 z-50 bg-black flex flex-col md:flex-row">
+            <div class="flex-1 relative bg-black flex items-center justify-center p-2 md:p-8" onclick="closeModal()">
+                 <button class="absolute top-6 left-6 text-white z-50" onclick="closeModal(); event.stopPropagation();"><div class="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="text-xs font-bold uppercase tracking-widest">Назад</span></div></button>
+                <img id="modal-img" src="" class="max-w-full max-h-full object-contain shadow-2xl" onclick="event.stopPropagation();">
+            </div>
+            <div class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-6 flex flex-col shrink-0 max-h-[50vh] md:max-h-full overflow-y-auto custom-scrollbar">
+                <div class="mb-6 pb-6 border-b border-white/5">
+                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Файл</h3>
+                    <div class="flex items-center gap-2 bg-white/5 p-2 rounded border border-white/10 group cursor-pointer" onclick="copyToClipboard(document.getElementById('modal-filename').textContent)">
+                        <span id="modal-filename" class="text-[10px] font-mono text-gray-400 break-all leading-relaxed"></span>
+                        <i data-lucide="copy" class="w-3 h-3 text-gray-600 group-hover:text-white transition-colors shrink-0"></i>
+                    </div>
+                </div>
+
+                <div id="photographer-note-container" class="mb-6 pb-6 border-b border-white/5 hidden">
+                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Примечание фотографа</h3>
+                    {% if is_owner %}
+                        <textarea id="modal-note" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-xs text-white focus:outline-none focus:border-white transition-colors h-24 resize-none placeholder-gray-700" placeholder="Ваше примечание для клиента..."></textarea>
+                        <button onclick="saveNote()" class="mt-2 text-[9px] font-bold uppercase text-gray-500 hover:text-white transition-colors">Обновить примечание</button>
+                    {% else %}
+                        <p id="modal-note-display" class="text-xs text-blue-400 italic bg-blue-400/5 p-3 rounded border border-blue-400/10"></p>
+                    {% endif %}
+                </div>
+
+                <div class="flex-1">
+                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-4">Комментарии</h3>
+                    <div id="modal-comments-list" class="mb-6"></div>
+                    
+                    <h3 class="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">Ваш комментарий</h3>
+                    <textarea id="modal-comment" class="w-full bg-[#111] border border-[#222] rounded-sm p-4 text-sm text-white focus:outline-none focus:border-white transition-colors h-32 resize-none placeholder-gray-700" placeholder="Пожелания по ретуши..."></textarea>
+                    <button onclick="saveComment()" class="mt-4 w-full py-3 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Сохранить</button>
+                </div>
+                {% if can_like %}
+                <div class="mt-auto pt-6 border-t border-[#222]">
+                    <button id="modal-like-btn" onclick="toggleLike(event, currentPhotoId)" class="w-full py-4 border border-white/20 text-white font-bold uppercase tracking-widest flex justify-center items-center gap-2 transition-all hover:bg-white/5">
+                        <i id="modal-like-icon" data-lucide="heart" class="w-4 h-4"></i> <span id="modal-like-text">Лайк</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+      </div>
+      <div id="upload-overlay" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+        <h3 class="text-xl font-bold text-white tracking-widest uppercase animate-pulse">Загрузка...</h3>
+      </div>
+</div>
+<script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        const fileInput = document.getElementById('file-upload-input');
+        const uploadForm = document.getElementById('upload-form');
+        if (fileInput && uploadForm) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    document.getElementById('upload-overlay').classList.remove('hidden');
+                    document.getElementById('upload-overlay').classList.add('flex');
+                    uploadForm.submit();
+                }
+            });
+        }
+        {% if messages %} {% for message in messages %} showToast("{{ message }}", "{{ message.tags }}" === "error"); {% endfor %} {% endif %}
+    });
+    {% if is_owner %}
+    const grid = document.getElementById('photo-grid');
+    if (grid) {
+        new Sortable(grid, {
+            animation: 150, ghostClass: 'opacity-50', delay: 100, delayOnTouchOnly: true,
+            onEnd: function() {
+                const order = Array.from(grid.children).map(el => el.getAttribute('data-id'));
+                fetch('{% url "reorder_photos_api" %}', { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}, body: JSON.stringify({order: order}) });
+            }
+        });
+    }
+    {% endif %}
+    const csrfToken = '{{ csrf_token }}';
+    const canLike = {{ can_like|yesno:"true,false" }};
+    let currentPhotoId = null;
+
+    const photoComments = {
+        {% for photo in photos %}
+            "{{ photo.id }}": [
+                {% for choice in photo.choice.all %}
+                    {% if choice.comment %}
+                        { 
+                            user: "{{ choice.client.username|escapejs }}", 
+                            userId: {{ choice.client.id }},
+                            text: "{{ choice.comment|escapejs }}" 
+                        },
+                    {% endif %}
+                {% endfor %}
+            ],
+        {% endfor %}
+    };
+
+    const currentUserId = {{ request.user.id|default:0 }};
+    const isOwner = {{ is_owner|yesno:"true,false" }};
+
+    const photoNotes = {
+        {% for photo in photos %}
+            "{{ photo.id }}": {
+                name: "{{ photo.image.name|basename|escapejs }}",
+                note: "{{ photo.photographer_note|escapejs }}"
+            },
+        {% endfor %}
+    };
+
+    function openModal(id, url, seq, isLiked) {
+        currentPhotoId = id;
+        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('modal-img').src = url;
+        
+        // Файл
+        document.getElementById('modal-filename').textContent = photoNotes[id].name;
+
+        // Примечание фотографа
+        const noteContainer = document.getElementById('photographer-note-container');
+        const note = photoNotes[id].note;
+        if (isOwner) {
+            noteContainer.classList.remove('hidden');
+            document.getElementById('modal-note').value = note;
+        } else if (note) {
+            noteContainer.classList.remove('hidden');
+            document.getElementById('modal-note-display').textContent = note;
+        } else {
+            noteContainer.classList.add('hidden');
+        }
+
+        const commentsList = document.getElementById('modal-comments-list');
+        const textarea = document.getElementById('modal-comment');
+        commentsList.innerHTML = '';
+        textarea.value = '';
+
+        const comments = photoComments[id] || [];
+        comments.forEach(c => {
+            if (c.userId === currentUserId) {
+                textarea.value = c.text;
+            } else if (isOwner) {
+                const div = document.createElement('div');
+                div.className = 'mb-3 p-2 bg-white/5 border-l-2 border-white/20';
+                div.innerHTML = `<p class="text-[9px] font-bold text-gray-500 uppercase">${c.user}</p><p class="text-xs text-gray-300">${c.text}</p>`;
+                commentsList.appendChild(div);
+            }
+        });
+        
+        if(canLike) updateButtonVisuals('modal-like-btn', isLiked);
+        fetch(`/api/track_view/${id}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} });
+    }
+
+    function saveNote() {
+        const note = document.getElementById('modal-note').value;
+        fetch(`/api/note/${currentPhotoId}/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'},
+            body: JSON.stringify({note: note})
+        }).then(res => res.json()).then(data => {
+            if(data.status === 'ok') {
+                photoNotes[currentPhotoId].note = note;
+                showToast("Примечание сохранено");
+            }
+        });
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        showToast("Имя файла скопировано");
+    }
+
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); currentPhotoId = null; }
+
+    function saveComment() {
+        if (!currentPhotoId) return;
+        const comment = document.getElementById('modal-comment').value;
+        fetch(`/api/comment/${currentPhotoId}/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'},
+            body: JSON.stringify({comment: comment})
+        }).then(res => res.json()).then(data => {
+            if(data.status === 'ok') {
+                if (!photoComments[currentPhotoId]) photoComments[currentPhotoId] = [];
+                const myComm = photoComments[currentPhotoId].find(c => c.userId === currentUserId);
+                if (myComm) myComm.text = comment;
+                else photoComments[currentPhotoId].push({user: "me", userId: currentUserId, text: comment});
+                showToast("Комментарий сохранен");
+            }
+        });
+    }
+
+    function updateButtonVisuals(btnId, isLiked, count=null, showCount=false) {
+        const btn = document.getElementById(btnId);
+        if(!btn) return;
+        const icon = btn.querySelector('svg') || btn.querySelector('i');
+        const textSpan = btn.querySelector('span');
+        if(isLiked) {
+            btn.classList.remove('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-black/80', 'opacity-0', 'group-hover:opacity-100');
+            btn.classList.add('bg-white', 'text-black', 'border-white');
+            if(icon) icon.setAttribute('fill', 'currentColor');
+            if(btnId === 'modal-like-btn' && textSpan) textSpan.textContent = "Выбрано";
+        } else {
+            btn.classList.remove('bg-white', 'text-black', 'border-white');
+            btn.classList.add('bg-black/50', 'text-white', 'border-white/20', 'hover:bg-black/80');
+            if(icon) icon.setAttribute('fill', 'none');
+            if(btnId !== 'modal-like-btn') {
+                if(!showCount) { btn.classList.add('opacity-0', 'group-hover:opacity-100'); } 
+                else { btn.classList.remove('opacity-0', 'group-hover:opacity-100'); }
+            }
+            if(btnId === 'modal-like-btn' && textSpan) textSpan.textContent = "Лайк";
+        }
+        if(btnId !== 'modal-like-btn' && textSpan) {
+            if(showCount && count > 0) { textSpan.textContent = count; textSpan.classList.remove('hidden'); } 
+            else { textSpan.classList.add('hidden'); }
+        }
+    }
+
+    function toggleLike(event, photoId) {
+        if(event) event.stopPropagation();
+        if(!photoId) return;
+        fetch(`/api/like/${photoId}/`, {
+            method: 'POST', headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
+        }).then(res => res.json()).then(data => {
+            if(data.error) {
+                let msg = data.error;
+                if (data.error === 'Personal limit reached') msg = 'Личный лимит исчерпан!';
+                else if (data.error === 'Total limit reached') msg = 'Общий лимит галереи исчерпан!';
+                showToast(msg, true);
+            } else {
+                const canSeeOthers = data.can_see_others;
+                const showCount = canSeeOthers && data.photo_total_likes > 0;
+                updateButtonVisuals(`grid-btn-${photoId}`, data.liked, data.photo_total_likes, showCount);
+                if(currentPhotoId === photoId) { updateButtonVisuals('modal-like-btn', data.liked); }
+                const headerCount = document.getElementById('header-liked-count');
+                if(headerCount) headerCount.textContent = data.my_total_count;
+                const card = document.querySelector(`div[data-id="${photoId}"]`);
+                if(card) {
+                    if(data.liked) { card.classList.add('border-white', 'ring-1', 'ring-white'); card.classList.remove('border-[#222]', 'hover:border-gray-500'); } 
+                    else { card.classList.remove('border-white', 'ring-1', 'ring-white'); card.classList.add('border-[#222]', 'hover:border-gray-500'); }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_access.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <h1 class="font-bold text-lg truncate max-w-[180px] sm:max-w-none">Доступ: {{ gallery.title }}</h1>
+        </div>
+    </nav>
+    <main class="p-4 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 gap-8">
+        <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+            <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4">Управление пользователями</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="access_submit" value="1">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 bg-[#1a1a1a]/30 p-3 rounded border border-white/5">
+                        {{ access_form.is_public }}
+                        <label for="{{ access_form.is_public.id_for_label }}" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">Публичный доступ</label>
+                    </div>
+                    <div>
+                         <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Добавить новых пользователей</label>
+                         {% include 'gallery/includes/user_tags_widget.html' with field=access_form.users_data %}
+                    </div>
+                    <button type="submit" class="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200">
+                        Обновить список
+                    </button>
+                </div>
+            </form>
+            <div class="mt-8">
+                <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Текущие участники</h4>
+                <div class="divide-y divide-white/5 border border-white/10 rounded">
+                    {% for access in access_list %}
+                    <div class="p-3 flex justify-between items-center">
+                        <span class="text-sm">{{ access.user.username }} <span class="text-gray-500 text-xs">({{ access.get_role_display }})</span></span>
+                        <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="remove_user_access" value="{{ access.user.id }}">
+                            <button type="submit" class="text-red-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+             <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4">Пригласительные ссылки</h3>
+             <form method="post" class="flex gap-4 items-end mb-6">
+                 {% csrf_token %}
+                 <input type="hidden" name="invite_submit" value="1">
+                 <div class="flex-1">
+                     <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Роль</label>
+                     {{ invite_form.role }}
+                 </div>
+                 <div class="flex-1">
+                     <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Лимит</label>
+                     {{ invite_form.usage_limit }}
+                 </div>
+                 <button type="submit" class="py-2.5 px-4 bg-white text-black text-xs font-bold uppercase tracking-widest mb-0">Создать</button>
+             </form>
+             <div class="divide-y divide-white/5 border border-white/10 rounded">
+                {% for invite in invites %}
+                <div class="p-3 flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white">{{ invite.get_role_display }}</span>
+                        <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'accept_invite' invite.token %}" class="bg-transparent text-[10px] text-gray-500 w-64 border-none p-0" onclick="this.select(); document.execCommand('copy'); showToast('Ссылка скопирована!');">
+                    </div>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="delete_invite" value="{{ invite.id }}"><button type="submit"><i data-lucide="trash-2" class="w-4 h-4 text-gray-500 hover:text-red-500"></i></button></form>
+                </div>
+                {% endfor %}
+             </div>
+        </div>
+    </main>
+</div>
+<script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast("{{ message }}", "{{ message.tags }}" === "error");
+            {% endfor %}
+        {% endif %}
+    });
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_analytics.html
+```
+{% extends 'base.html' %}
+{% load gallery_extras %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col selection:bg-white selection:text-black">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-6">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight">{{ gallery.title }}</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest">Аналитика и Управление</span>
+          </div>
+        </div>
+        <div class="flex gap-4 items-center">
+             <label class="flex items-center gap-2 cursor-pointer text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors select-none">
+                 <div class="relative">
+                     <input type="checkbox" id="authorToggle" class="sr-only peer" onchange="toggleAuthorStats(this)" {% if include_author %}checked{% endif %}>
+                     <div class="w-8 h-4 bg-gray-700 rounded-full shadow-inner transition-colors duration-200 ease-in-out peer-checked:bg-white"></div>
+                     <div class="absolute w-2 h-2 bg-white rounded-full shadow inset-y-1 left-1 transition-transform duration-200 ease-in-out peer-checked:translate-x-4 peer-checked:bg-black"></div>
+                 </div>
+                 <span>Учитывать автора</span>
+             </label>
+             <div class="hidden md:flex bg-[#111] rounded p-1 border border-[#222]">
+                <button onclick="switchTab('OVERVIEW')" id="tab-btn-OVERVIEW" class="flex items-center gap-2 px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all bg-white text-black shadow-lg">
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Обзор
+                </button>
+                <button onclick="switchTab('PHOTOS')" id="tab-btn-PHOTOS" class="flex items-center gap-2 px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all text-gray-500 hover:text-white">
+                    <i data-lucide="grid" class="w-3.5 h-3.5"></i> Фотографии
+                </button>
+            </div>
+             <a href="{% url 'gallery_settings' gallery.id %}" class="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+             </a>
+        </div>
+    </nav>
+    <main class="flex-1 p-6 md:p-8 max-w-[1920px] mx-auto w-full">
+        <div id="tab-content-OVERVIEW" class="animate-in fade-in duration-500">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- KPI Funnel -->
+                <div class="lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[320px] flex flex-col relative overflow-hidden">
+                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Воронка выбора</h3>
+                    <div class="relative flex-1 flex items-center justify-center min-h-0 w-full">
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                            <span class="text-3xl font-bold text-white">{{ selected_count }}</span>
+                            <span class="text-[9px] text-gray-500 uppercase tracking-widest">Выбрано</span>
+                        </div>
+                        <div class="absolute inset-0">
+                             <canvas id="kpiChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between text-xs text-gray-400 px-2 pt-2 border-t border-white/5">
+                        <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-white"></div> Выбрано</div>
+                        <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Просм.</div>
+                        <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#333]"></div> Ост.</div>
+                    </div>
+                </div>
+
+                <!-- Main Dynamic Chart -->
+                <div class="lg:col-span-3 bg-[#0a0a0a] border border-white/10 p-6 rounded-sm h-[320px] flex flex-col">
+                     <div class="flex justify-between items-center mb-4">
+                         <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Динамика проекта</h3>
+                         <select id="chartSelector" onchange="updateDynamicChart(this.value)" class="bg-[#111] text-white text-xs border border-[#333] rounded px-3 py-1 outline-none cursor-pointer hover:border-white transition-colors">
+                             <option value="activity">Активность по дням</option>
+                             <option value="top">Топ-10 фото</option>
+                         </select>
+                     </div>
+                     <div class="flex-1 w-full relative min-h-0">
+                        <canvas id="dynamicChart"></canvas>
+                     </div>
+                </div>
+
+                <!-- Recent Comments Widget -->
+                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-white/10 bg-[#111] flex justify-between items-center">
+                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Последние комментарии</h3>
+                        <button onclick="openModalWindow('modal-all-comments')" class="text-[9px] font-bold text-white uppercase hover:underline">Все ({{ all_comments_list.count }})</button>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                        {% for c in all_comments_list|slice:":5" %}
+                        <div class="mb-4 last:mb-0 pb-4 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ c.photo.id }}')">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[10px] font-bold text-white group-hover:text-blue-400 transition-colors uppercase">{{ c.client.username }}</span>
+                                <span class="text-[9px] font-mono text-gray-600">#{{ c.photo.sequence_number }} | {{ c.timestamp|date:"d.m H:i" }}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 italic">"{{ c.comment }}"</p>
+                        </div>
+                        {% empty %}
+                        <div class="py-10 text-center text-gray-600 text-xs uppercase tracking-widest">Нет комментариев</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Recent Activity Widget -->
+                <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-sm overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-white/10 bg-[#111] flex justify-between items-center">
+                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Лог активности</h3>
+                        <button onclick="openModalWindow('modal-all-activity')" class="text-[9px] font-bold text-white uppercase hover:underline">Полный лог</button>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                        {% for log in activity_log|slice:":10" %}
+                        <div class="flex items-center justify-between py-2 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ log.photo.id }}')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full {% if log.is_liked %}bg-white{% else %}bg-blue-500{% endif %}"></div>
+                                <span class="text-xs text-gray-300 group-hover:text-white transition-colors">
+                                    <span class="font-bold text-white">{{ log.client.username }}</span> 
+                                    {% if log.is_liked %}лайкнул(а){% else %}посмотрел(а){% endif %} 
+                                    фото <span class="font-mono text-[10px]">#{{ log.photo.sequence_number }}</span>
+                                </span>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ log.timestamp|date:"H:i" }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="py-10 text-center text-gray-600 text-xs uppercase tracking-widest">Нет действий</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="modal-all-comments" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-white">Все комментарии галереи</h2>
+                    <button onclick="closeModalWindow('modal-all-comments')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    {% for c in all_comments_list %}
+                    <div class="mb-6 last:mb-0 pb-6 border-b border-white/5 last:border-0 cursor-pointer group" onclick="scrollToPhoto('{{ c.photo.id }}'); closeModalWindow('modal-all-comments')">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold text-gray-400">{{ c.client.username|first|upper }}</div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-white uppercase tracking-wider group-hover:text-blue-400 transition-colors">{{ c.client.username }}</p>
+                                    <p class="text-[9px] text-gray-600 font-mono">Файл: IMG_{{ c.photo.sequence_number|stringformat:"04d" }}</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ c.timestamp|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <p class="text-sm text-gray-300 italic pl-11">"{{ c.comment }}"</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-all-activity" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-white">Полный лог активности</h2>
+                    <button onclick="closeModalWindow('modal-all-activity')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    <div class="space-y-1">
+                        {% for log in activity_log %}
+                        <div class="flex items-center justify-between py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 transition-all cursor-pointer group" onclick="scrollToPhoto('{{ log.photo.id }}'); closeModalWindow('modal-all-activity')">
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-2 rounded-full {% if log.is_liked %}bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]{% else %}bg-blue-500{% endif %}"></div>
+                                <div class="text-xs">
+                                    <span class="font-bold text-white uppercase tracking-tighter">{{ log.client.username }}</span>
+                                    <span class="text-gray-500">
+                                        {% if log.is_liked %}добавил(а) в избранное{% else %}просмотрел(а) оригинал{% endif %} 
+                                        фото <span class="font-mono font-bold text-gray-300">#{{ log.photo.sequence_number }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-mono text-gray-600">{{ log.timestamp|date:"d.m H:i" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-content-PHOTOS" class="hidden animate-in slide-in-from-bottom-2 duration-500">
+            <div class="bg-[#0a0a0a] border border-white/10 rounded-sm min-h-[calc(100vh-140px)] flex flex-col">
+                <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-[#111] border-b border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                    <div class="col-span-1">Превью</div>
+                    <div class="col-span-3">Имя файла</div>
+                    <div class="col-span-2">Статус</div>
+                    <div class="col-span-4">Комментарии / Примечания</div>
+                    <div class="col-span-2 text-right">Действия</div>
+                </div>
+                <div class="overflow-y-auto custom-scrollbar flex-1 max-h-[70vh]">
+                    {% for item in photos_data %}
+                    <div data-photo-id="{{ item.id }}" class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[#222] items-center hover:bg-[#0f0f0f] transition-all duration-500">
+                        <div class="col-span-1 h-10 w-16 bg-[#111] overflow-hidden rounded border border-[#333]">
+                            <img src="{{ item.thumbnail }}" class="w-full h-full object-cover" loading="lazy">
+                        </div>
+                        <div class="col-span-3 font-mono text-[11px] text-gray-300 truncate">{{ item.filename }}</div>
+                        <div class="col-span-2">
+                            {% if item.is_liked %}
+                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white text-black text-[9px] font-bold uppercase tracking-wider">
+                                    <i data-lucide="heart" class="w-2.5 h-2.5 fill-black"></i> Выбрано
+                                </span>
+                            {% else %}
+                                <span class="text-gray-600 text-[9px] uppercase tracking-wider">—</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-span-4 text-[11px] text-gray-400 italic truncate">
+                            {% if item.comment %}<span class="text-white not-italic font-bold">К:</span> {{ item.comment }}{% endif %}
+                            {% if item.photographer_note %}<br><span class="text-blue-400 not-italic font-bold">П:</span> {{ item.photographer_note }}{% endif %}
+                            {% if not item.comment and not item.photographer_note %}-{% endif %}
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <button onclick="previewPhoto('{{ item.full_url }}', '{{ item.filename }}')" class="text-[9px] font-bold uppercase tracking-widest text-white border border-white/10 px-3 py-1.5 hover:bg-white hover:text-black transition-all">Просмотреть</button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-10 text-center text-gray-600 text-sm">Нет фотографий</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Photo Preview Modal -->
+<div id="preview-modal" class="hidden fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" onclick="closePreview()">
+    <button class="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
+        <i data-lucide="x" class="w-8 h-8"></i>
+    </button>
+    <img id="preview-img" src="" class="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-sm">
+    <p id="preview-caption" class="mt-6 text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]"></p>
+</div>
+
+<script>
+    function previewPhoto(url, name) {
+        document.getElementById('preview-img').src = url;
+        document.getElementById('preview-caption').textContent = name;
+        document.getElementById('preview-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closePreview() {
+        document.getElementById('preview-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    function openModalWindow(id) {
+        document.getElementById(id).classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModalWindow(id) {
+        document.getElementById(id).classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    window.scrollToPhoto = function(photoId) {
+        switchTab('PHOTOS');
+        setTimeout(() => {
+            const photoEl = document.querySelector(`[data-photo-id="${photoId}"]`);
+            if (photoEl) {
+                photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                photoEl.style.outline = '2px solid white';
+                photoEl.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                setTimeout(() => {
+                    photoEl.style.outline = 'none';
+                    photoEl.style.backgroundColor = '';
+                }, 3000);
+            }
+        }, 100);
+    }
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = isError ? 'bg-red-600 border-red-500' : 'bg-white border-white';
+        const textClass = isError ? 'text-white' : 'text-black';
+        toast.className = `pointer-events-auto transform translate-y-[-20px] opacity-0 transition-all duration-300 flex items-center justify-between gap-4 px-6 py-3 rounded shadow-2xl border ${bgClass} ${textClass} min-w-[300px] max-w-md`;
+        toast.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span class="text-xs font-bold uppercase tracking-widest">${message}</span></div>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        requestAnimationFrame(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { toast.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    function toggleAuthorStats(checkbox) {
+        const url = new URL(window.location);
+        if (checkbox.checked) {
+            url.searchParams.set('include_author', 'true');
+        } else {
+            url.searchParams.delete('include_author');
+        }
+        window.location.href = url.toString();
+    }
+    function switchTab(tabName) {
+        document.getElementById('tab-content-OVERVIEW').classList.add('hidden');
+        document.getElementById('tab-content-PHOTOS').classList.add('hidden');
+        document.getElementById('tab-btn-OVERVIEW').className = "flex items-center gap-2 px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all text-gray-500 hover:text-white";
+        document.getElementById('tab-btn-PHOTOS').className = "flex items-center gap-2 px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all text-gray-500 hover:text-white";
+        document.getElementById('tab-content-' + tabName).classList.remove('hidden');
+        document.getElementById('tab-btn-' + tabName).className = "flex items-center gap-2 px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all bg-white text-black shadow-lg";
+    }
+    function copyLink() {
+        const url = "{{ request.scheme }}://{{ request.get_host }}{% url 'gallery_detail' gallery.photographer.id gallery.id %}";
+        navigator.clipboard.writeText(url);
+        showToast('Ссылка скопирована!');
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if messages %}
+            {% for message in messages %}
+                showToast("{{ message }}", "{{ message.tags }}" === "error");
+            {% endfor %}
+        {% endif %}
+    });
+    new Chart(document.getElementById('kpiChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Выбрано', 'Просмотрено', 'Не просмотрено'],
+            datasets: [{
+                data: [{{ selected_count }}, {{ viewed_count }}, {{ unviewed_count }}],
+                backgroundColor: ['#ffffff', '#3b82f6', '#333333'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: { legend: { display: false } }
+        }
+    });
+    let dynamicChartInstance = null;
+    const ctxDynamic = document.getElementById('dynamicChart').getContext('2d');
+    const dataActivity = {
+        type: 'line',
+        labels: {{ activity_dates|safe }},
+        datasets: [
+            {
+                label: 'Лайки',
+                data: {{ activity_likes|safe }},
+                borderColor: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Просмотры',
+                data: {{ activity_views|safe }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                tension: 0.4
+            },
+            {
+                label: 'Комментарии',
+                data: {{ activity_comments|safe }},
+                borderColor: '#22c55e',
+                backgroundColor: 'transparent',
+                tension: 0.4
+            }
+        ]
+    };
+    const dataTop = {
+        type: 'bar',
+        labels: {{ top_labels|safe }},
+        datasets: [{
+            label: 'Лайки',
+            data: {{ top_data|safe }},
+            backgroundColor: '#ffffff',
+            borderRadius: 4
+        }]
+    };
+    function renderDynamicChart(config) {
+        if (dynamicChartInstance) dynamicChartInstance.destroy();
+        dynamicChartInstance = new Chart(ctxDynamic, {
+            type: config.type,
+            data: { labels: config.labels, datasets: config.datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: true, labels: { color: '#666', font: { size: 10 } } } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } },
+                    x: { grid: { display: false }, ticks: { color: '#666' } }
+                },
+                indexAxis: config.type === 'bar' ? 'y' : 'x'
+            }
+        });
+    }
+    window.updateDynamicChart = function(value) {
+        if (value === 'activity') renderDynamicChart(dataActivity);
+        else if (value === 'top') renderDynamicChart(dataTop);
+    };
+    renderDynamicChart(dataActivity);
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_confirm_delete.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-red-900/50 p-8 rounded shadow-2xl text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent"></div>
+        <div class="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-900/50">
+            <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+        </div>
+        <h2 class="text-xl font-bold uppercase tracking-widest text-white mb-2">Удалить галерею?</h2>
+        <p class="text-lg text-white font-serif italic mb-6">"{{ object.title }}"</p>
+        <p class="text-gray-400 text-xs mb-8 leading-relaxed">
+            Это действие необратимо. <br>
+            Вся галерея и <span class="text-white font-bold">{{ object.photos.count }} фотографий</span> будут удалены с сервера навсегда.
+        </p>
+        <form method="post" class="flex flex-col gap-3">
+            {% csrf_token %}
+            <button type="submit" class="w-full py-4 bg-red-600 text-white font-bold uppercase tracking-widest hover:bg-red-500 transition-colors text-xs">
+                Подтвердить удаление
+            </button>
+            <a href="{% url 'gallery_manage' object.id %}" class="w-full py-4 border border-white/10 text-gray-400 hover:text-white font-bold uppercase tracking-widest hover:bg-white/5 transition-colors text-xs">
+                Отмена
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_form.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-3xl bg-[#111] border border-white/10 p-8 rounded shadow-2xl">
+        <h2 class="text-2xl font-bold uppercase tracking-widest text-white mb-6 text-center">
+            {% if form.instance.pk %}Настройки Галереи{% else %}Новая Галерея{% endif %}
+        </h2>
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div class="space-y-4 border-b border-white/10 pb-6">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Основное</h3>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Название</label>
+                    {{ form.title }}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Срок действия</label>
+                        {{ form.expires_at }}
+                    </div>
+                    <div>
+                         <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Лимит выбора (на человека)</label>
+                        {{ form.max_selection_count }}
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-4 pt-2">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Доступ и Приватность</h3>
+                <div class="bg-[#1a1a1a] p-4 rounded border border-white/5 space-y-4">
+                    <div class="flex items-center gap-3">
+                        {{ form.is_public }}
+                        <div>
+                            <label class="text-xs font-bold uppercase tracking-widest text-white">Публичная галерея</label>
+                            <p class="text-[10px] text-gray-500">Любой, у кого есть ссылка, сможет просматривать фото.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        Добавить пользователей (Логины)
+                    </label>
+                    {{ form.username_list }}
+                    <p class="text-[10px] text-gray-500 mt-1">Введите логины пользователей через запятую (например: client1, anna_model). Они получат гарантированный доступ.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        Авто-добавление по ссылке (Кол-во мест)
+                    </label>
+                    {{ form.invite_limit }}
+                    <p class="text-[10px] text-gray-500 mt-1">
+                        Если > 0, первые N человек, перешедших по ссылке, автоматически получат доступ. 
+                        0 = доступ только по списку выше (или всем, если публично).
+                    </p>
+                </div>
+                 <div class="flex items-center gap-3 pt-4 border-t border-white/10 mt-4">
+                    {{ form.is_active }}
+                    <label class="text-xs font-bold uppercase tracking-widest text-gray-400">Галерея Активна</label>
+                </div>
+            </div>
+            <div class="pt-6 flex flex-col gap-3">
+                <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm">
+                    {% if form.instance.pk %}Сохранить Настройки{% else %}Создать и Загрузить Фото{% endif %}
+                </button>
+                <a href="{% url 'dashboard' %}" class="w-full py-3 text-center border border-white/20 text-gray-400 hover:text-white uppercase tracking-widest text-xs hover:bg-white/5 transition-colors">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_invites.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight">Доступ и Приглашения</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest">{{ gallery.title }}</span>
+          </div>
+        </div>
+    </nav>
+    <main class="p-6 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="space-y-6">
+            <div class="bg-[#111] border border-white/10 p-6 rounded-sm">
+                <h3 class="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i data-lucide="link" class="w-4 h-4"></i> Создать приглашение
+                </h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200">
+                        Сгенерировать ссылку
+                    </button>
+                </form>
+            </div>
+            <div class="bg-[#111] border border-white/10 rounded-sm overflow-hidden">
+                <div class="p-4 border-b border-white/10 bg-[#161616]">
+                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Активные ссылки</h3>
+                </div>
+                <div class="divide-y divide-white/5">
+                    {% for invite in invites %}
+                    <div class="p-4 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-white font-mono text-xs bg-gray-800 px-2 py-0.5 rounded">{{ invite.get_role_display }}</span>
+                                <span class="text-[10px] text-gray-500">
+                                    {% if invite.usage_limit == 0 %}∞{% else %}{{ invite.usage_count }}/{{ invite.usage_limit }}{% endif %} входов
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'accept_invite' invite.token %}" 
+                                       class="bg-transparent text-[10px] text-gray-500 w-48 border-none focus:ring-0 p-0 cursor-pointer hover:text-white transition-colors"
+                                       onclick="this.select(); document.execCommand('copy'); alert('Ссылка скопирована!');">
+                            </div>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_invite" value="{{ invite.id }}">
+                            <button type="submit" class="text-gray-500 hover:text-red-500 transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-gray-600 text-xs">Нет активных ссылок</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="bg-[#111] border border-white/10 rounded-sm overflow-hidden h-fit">
+            <div class="p-4 border-b border-white/10 bg-[#161616] flex justify-between items-center">
+                <h3 class="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4"></i> Участники ({{ access_list.count }})
+                </h3>
+            </div>
+            <div class="divide-y divide-white/5">
+                {% for access in access_list %}
+                <div class="p-4 flex justify-between items-center group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">
+                            {{ access.user.username|make_list|first|upper }}
+                        </div>
+                        <div>
+                            <div class="text-sm text-white font-bold">{{ access.user.username }}</div>
+                            <div class="text-[10px] text-gray-500 uppercase">{{ access.get_role_display }}</div>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-gray-600 font-mono">
+                        {{ access.joined_at|date:"d.m.Y" }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-gray-600 text-xs">
+                    В этой галерее пока никого нет.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_manage.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+    <nav class="border-b border-white/10 bg-[#0a0a0a] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+          </a>
+          <div class="h-6 w-[1px] bg-white/10"></div>
+          <div>
+              <h1 class="font-bold text-lg leading-none tracking-tight">Управление контентом</h1>
+              <span class="text-[10px] text-gray-500 uppercase tracking-widest">{{ gallery.title }}</span>
+          </div>
+        </div>
+        <a href="{% url 'gallery_delete' gallery.pk %}" class="text-[10px] md:text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 px-3 py-1.5 hover:bg-red-900/20 transition-all">
+            <i data-lucide="trash-2" class="w-3 h-3 inline mr-1"></i> Удалить галерею
+        </a>
+    </nav>
+    <main class="p-6 md:p-8 max-w-[1920px] mx-auto w-full">
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+            <div class="p-3 bg-green-900/20 border border-green-900 text-green-400 text-xs uppercase tracking-widest font-bold">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="bg-[#111] border border-white/10 p-8 rounded-sm mb-12">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Добавить фотографии</h3>
+            <form method="post" enctype="multipart/form-data" class="flex flex-col gap-4">
+                {% csrf_token %}
+                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-40 border border-white/10 border-dashed rounded-sm cursor-pointer hover:bg-[#151515] hover:border-white/40 transition-all group relative">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6" id="upload-placeholder">
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-gray-600 group-hover:text-white transition-colors mb-3"></i>
+                        <p class="text-sm text-gray-400 uppercase tracking-widest"><span class="font-bold text-white">Кликните</span> чтобы выбрать файлы</p>
+                        <p class="text-xs text-gray-600 mt-2">JPG, PNG (Можно выбрать много)</p>
+                    </div>
+                    <div id="file-info" class="hidden flex-col items-center justify-center pt-5 pb-6">
+                         <i data-lucide="check-circle" class="w-10 h-10 text-green-500 mb-3"></i>
+                         <p class="text-lg font-bold text-white" id="file-count">0 файлов</p>
+                         <p class="text-xs text-gray-500 uppercase tracking-widest mt-2">Готовы к загрузке</p>
+                    </div>
+                    {{ form.images }}
+                </label>
+                <div class="flex justify-end">
+                    <button type="submit" id="submit-btn" class="px-8 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors opacity-50 cursor-not-allowed" disabled>
+                        Загрузить на сервер
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="flex items-center justify-between mb-6 pb-2 border-b border-white/10">
+             <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Загруженные кадры ({{ photos.count }})</h3>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            {% for photo in photos %}
+            <div class="relative group bg-[#111] border border-[#222] hover:border-white/30 transition-all">
+                <div class="aspect-[3/2] overflow-hidden bg-[#050505] relative">
+                    <img src="{{ photo.image.url }}" loading="lazy" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute inset-0 bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                        <form action="{% url 'photo_delete' photo.pk %}" method="post" onsubmit="return confirm('Удалить этот кадр?');">
+                            {% csrf_token %}
+                            <button type="submit" class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-500 transform hover:scale-110 transition-all">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="p-2 border-t border-[#222] flex justify-between items-center bg-[#0f0f0f]">
+                    <span class="text-[9px] font-mono text-gray-500">#{{ photo.sequence_number }}</span>
+                    <div class="w-2 h-2 rounded-full {% if photo.status == 'UNVIEWED' %}bg-gray-700{% else %}bg-green-500{% endif %}"></div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full py-12 text-center text-gray-600 text-xs uppercase tracking-widest">
+                Галерея пуста. Загрузите фотографии выше.
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+<script>
+    const fileInput = document.getElementById('file-upload');
+    const placeholder = document.getElementById('upload-placeholder');
+    const fileInfo = document.getElementById('file-info');
+    const fileCount = document.getElementById('file-count');
+    const submitBtn = document.getElementById('submit-btn');
+    fileInput.addEventListener('change', function(e) {
+        if (this.files && this.files.length > 0) {
+            placeholder.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            fileInfo.classList.add('flex');
+            fileCount.textContent = `Выбрано: ${this.files.length}`;
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            placeholder.classList.remove('hidden');
+            fileInfo.classList.add('hidden');
+            fileInfo.classList.remove('flex');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    });
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\gallery_settings.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-2xl bg-[#111] border border-white/10 p-8 rounded shadow-2xl">
+        <h2 class="text-2xl font-bold uppercase tracking-widest text-white mb-6 text-center truncate max-w-[250px] sm:max-w-none">
+            {% if is_create %}Создание Галереи{% else %}Настройки Галереи{% endif %}
+        </h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                {% for field in form %}
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                        <div class="flex items-center gap-3 bg-[#1a1a1a]/30 p-3 rounded border border-white/5">
+                            {{ field }}
+                            <label for="{{ field.id_for_label }}" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">{{ field.label }}</label>
+                        </div>
+                    {% else %}
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% if is_create %}
+                   <hr class="border-white/10 my-6">
+                   <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Первичный доступ</h3>
+                   <div class="flex items-center gap-3 bg-[#1a1a1a]/30 p-3 rounded border border-white/5 mb-4">
+                       {{ access_form.is_public }}
+                       <label for="{{ access_form.is_public.id_for_label }}" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer select-none">Публичный доступ</label>
+                   </div>
+                   <div class="mt-4">
+                       <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Добавить пользователей</label>
+                       {% include 'gallery/includes/user_tags_widget.html' with field=access_form.users_data %}
+                   </div>
+                {% endif %}
+            </div>
+            <div class="pt-4 flex flex-col gap-3">
+                <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm">
+                    Сохранить
+                </button>
+                <a href="{% url 'dashboard' %}" class="w-full py-3 text-center border border-white/20 text-gray-400 hover:text-white uppercase tracking-widest text-xs hover:bg-white/5 transition-colors">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const commonLikes = document.getElementById('id_is_common_likes');
+        const clientsSeeOthers = document.getElementById('id_clients_see_others');
+        const viewersSeeLikes = document.getElementById('id_viewers_see_likes');
+        if (commonLikes && clientsSeeOthers && viewersSeeLikes) {
+            function updateState() {
+                const isCommon = commonLikes.checked;
+                const canSee = clientsSeeOthers.checked;
+
+                if (isCommon) {
+                    clientsSeeOthers.disabled = true;
+                    clientsSeeOthers.parentElement.classList.add('opacity-50');
+                } else {
+                    clientsSeeOthers.disabled = false;
+                    clientsSeeOthers.parentElement.classList.remove('opacity-50');
+                }
+
+                const hasPublicData = isCommon || canSee;
+                if (hasPublicData) {
+                    viewersSeeLikes.disabled = false;
+                    viewersSeeLikes.parentElement.classList.remove('opacity-50', 'pointer-events-none');
+                } else {
+                    viewersSeeLikes.disabled = true;
+                    viewersSeeLikes.checked = false; 
+                    viewersSeeLikes.parentElement.classList.add('opacity-50', 'pointer-events-none');
+                }
+            }
+            updateState();
+            commonLikes.addEventListener('change', updateState);
+            clientsSeeOthers.addEventListener('change', updateState);
+        }
+    });
+</script>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\landing.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black pb-12 md:pb-20">
+      <nav class="fixed w-full z-50 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 md:px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-8 h-8 bg-white rounded-full border-2 border-gray-400 shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0">
+             <span class="font-serif font-bold text-black text-xs">L</span>
+          </div>
+          <span class="font-bold tracking-tight text-xl text-white">LUMEN</span>
+        </div>
+        <div class="flex gap-4 items-center">
+          {% if user.is_authenticated %}
+              {% if user.role == 'PHOTOGRAPHER' %}
+                  <a href="{% url 'dashboard' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-white hover:text-gray-300 transition-colors">
+                      Кабинет Фотографа
+                  </a>
+              {% elif user.role == 'CLIENT' %}
+                  <a href="{% url 'client_dashboard' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-white hover:text-gray-300 transition-colors">
+                      Мои Галереи
+                  </a>
+              {% endif %}
+              <form action="{% url 'users:logout' %}" method="post" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-gray-400 hover:text-white transition-colors">Выход</button>
+              </form>
+          {% else %}
+              <a href="{% url 'users:login' %}" class="text-[10px] md:text-xs uppercase font-bold tracking-widest text-gray-400 hover:text-white transition-colors">
+                Вход
+              </a>
+              <a href="{% url 'users:signup' %}" class="bg-white text-black px-4 md:px-6 py-2 md:py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                Регистрация
+              </a>
+          {% endif %}
+        </div>
+      </nav>
+      <header class="relative w-full min-h-[100dvh] flex flex-col justify-end p-5 md:p-12 overflow-hidden border-b border-white/10">
+        <div 
+          class="absolute inset-0 z-0 bg-cover bg-center opacity-50 grayscale transition-opacity duration-1000"
+          style="background-image: url('https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2400&auto=format&fit=crop')"
+        ></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent z-0"></div>
+        <div class="relative z-10 max-w-7xl w-full mx-auto pb-16 md:pb-0">
+          <div class="flex flex-col md:flex-row items-end justify-between gap-8 md:gap-12">
+            <div class="w-full">
+              <div class="flex items-center gap-3 mb-4 md:mb-6">
+                 <span class="w-8 md:w-12 h-[1px] bg-white"></span>
+                 <span class="text-white font-mono text-[10px] md:text-xs uppercase tracking-widest">Lumen</span>
+              </div>
+              <h1 class="text-4xl sm:text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] mb-4 md:mb-6 text-white mix-blend-screen uppercase break-words">
+                Фокус<br/>
+                на Искусстве.
+              </h1>
+              <p class="text-gray-300 max-w-md text-sm md:text-lg leading-relaxed font-light">
+                Платформа для профессионального отбора и управления фотографиями. Оптимизированный рабочий процесс для эффективной работы.
+              </p>
+            </div>
+            <div class="flex flex-col gap-4 w-full md:w-auto">
+              {% if user.is_authenticated %}
+                  {% if user.role == 'PHOTOGRAPHER' %}
+                      <a href="{% url 'dashboard' %}" 
+                  {% elif user.role == 'CLIENT' %}
+                      <a href="{% url 'client_dashboard' %}" 
+                  {% endif %}
+              {% else %}
+                  <a href="{% url 'users:login' %}" 
+              {% endif %}
+                class="group w-full md:w-64 h-14 md:h-16 bg-white text-black flex items-center justify-between px-6 hover:bg-gray-200 transition-all border border-white"
+              >
+                <span class="font-bold uppercase tracking-widest text-xs md:text-sm">Перейти в Галереи</span>
+                <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+      <section class="px-5 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 border-b border-white/10 pb-6 gap-2">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tighter text-white uppercase">Архитектура</h2>
+          <span class="font-mono text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">Обзор возможностей</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4 h-auto md:h-[800px]">
+          <div class="md:col-span-2 row-span-2 relative group overflow-hidden border border-white/10 bg-[#111] min-h-[300px] md:min-h-0">
+            <img 
+              src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop" 
+              class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700 grayscale"
+              alt="Photographer"
+            />
+            <div class="absolute bottom-0 left-0 p-6 md:p-8 w-full bg-gradient-to-t from-black via-black/80 to-transparent">
+              <i data-lucide="camera" class="w-6 h-6 md:w-8 md:h-8 text-white mb-3 md:mb-4"></i>
+              <h3 class="text-2xl md:text-3xl font-bold mb-2 text-white">Полное погружение</h3>
+              <p class="text-gray-300 max-w-md text-xs md:text-sm leading-relaxed">
+                Среда просмотра, достойная ваших работ. Никакого шума, только ваши фотографии через призму цифрового объектива.
+              </p>
+            </div>
+          </div>
+          <div class="bg-[#111] border border-white/10 relative overflow-hidden group hover:border-white transition-colors min-h-[200px]">
+             <img 
+              src="https://images.unsplash.com/photo-1502759683299-cdcd6974244f?q=80&w=800&auto=format&fit=crop" 
+              class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale group-hover:scale-105 transition-transform duration-700" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            <div class="relative z-10 p-6 md:p-8 flex flex-col justify-between h-full">
+                <div class="flex justify-between items-start mb-4">
+                  <i data-lucide="layout-grid" class="text-gray-400 group-hover:text-white transition-colors"></i>
+                  <span class="font-mono text-xs text-gray-500">01</span>
+                </div>
+                <div>
+                  <h4 class="text-lg md:text-xl font-bold mb-2 text-white">Умный Отбор</h4>
+                  <p class="text-xs md:text-sm text-gray-400 leading-relaxed">
+                    Лимиты на выбор. Клиент выбирает только лучшие кадры.
+                  </p>
+                </div>
+            </div>
+          </div>
+          <div class="bg-[#111] border border-white/10 relative overflow-hidden group hover:border-white transition-colors min-h-[200px]">
+             <img 
+              src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?q=80&w=800&auto=format&fit=crop" 
+              class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale group-hover:scale-105 transition-transform duration-700" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            <div class="relative z-10 p-6 md:p-8 flex flex-col justify-between h-full">
+                <div class="flex justify-between items-start mb-4">
+                  <i data-lucide="clock" class="text-gray-400 group-hover:text-white transition-colors"></i>
+                  <span class="font-mono text-xs text-gray-500">02</span>
+                </div>
+                <div>
+                  <h4 class="text-lg md:text-xl font-bold mb-2 text-white">Таймер Доступа</h4>
+                  <p class="text-xs md:text-sm text-gray-400 leading-relaxed">
+                    Таймер на выбор. Создайте срочность.
+                  </p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="px-5 md:px-12 py-8 md:py-12 border-t border-white/10 mt-8 md:mt-12 flex flex-col md:flex-row justify-between items-start md:items-center text-gray-500 text-sm gap-6">
+        <div class="flex flex-col gap-2">
+           <span class="font-bold text-white tracking-widest">LUMEN | Управление Галереями</span>
+           <span>© 2026 Все права защищены.</span>
+        </div>
+        <div class="flex flex-wrap gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase">
+          <a href="#" class="hover:text-white">Конфиденциальность</a>
+          <a href="#" class="hover:text-white">Условия</a>
+          <a href="#" class="hover:text-white">Контакты</a>
+        </div>
+      </footer>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\login.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-white/10 p-8 rounded shadow-2xl text-center">
+        <p class="text-white mb-4">Для доступа к галереям, пожалуйста, войдите или зарегистрируйтесь.</p>
+        <a href="{% url 'users:login' %}" class="w-full py-3 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm inline-block">Войти</a>
+        <p class="text-xs text-gray-500 mt-4">Если вы фотограф, используйте свой аккаунт фотографа.</p>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\gallery\includes\user_tags_widget.html
+```
+<div class="user-tag-widget">
+    <div id="tags-container" class="flex flex-wrap gap-2 mb-2 p-2 bg-[#050505] border border-white/10 min-h-[40px] rounded-sm"></div>
+    <input type="text" id="user-input" class="w-full bg-[#111] border border-white/20 text-white p-2.5 rounded-sm text-sm" placeholder="Введите логин и нажмите Enter">
+    {{ field }} 
+    <div id="user-error" class="text-red-500 text-xs mt-1 hidden">Пользователь не найден</div>
+</div>
+<script>
+    (function() {
+        const input = document.getElementById('user-input');
+        const container = document.getElementById('tags-container');
+        const hiddenField = document.getElementById('{{ field.id_for_label }}');
+        const errorMsg = document.getElementById('user-error');
+        let users = new Set();
+        if (hiddenField.value) {
+            hiddenField.value.split(',').forEach(u => {
+                if(u.trim()) addTagVisual(u.trim());
+            });
+        }
+        function updateHiddenField() {
+            hiddenField.value = Array.from(users).join(',');
+        }
+        function addTagVisual(username) {
+            if (users.has(username)) return;
+            users.add(username);
+            const tag = document.createElement('div');
+            tag.className = "flex items-center gap-1 bg-white text-black px-2 py-1 text-xs font-bold uppercase rounded-sm";
+            tag.innerHTML = `
+                <span>${username}</span>
+                <button type="button" class="hover:text-red-600 ml-1 font-bold" onclick="removeTag(this, '${username}')">&times;</button>
+            `;
+            container.appendChild(tag);
+            updateHiddenField();
+        }
+        window.removeTag = function(btn, username) {
+            users.delete(username);
+            btn.parentElement.remove();
+            updateHiddenField();
+        }
+        input.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const username = this.value.trim();
+                if (!username) return;
+                try {
+                    const response = await fetch(`/api/check_user/?username=${username}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        addTagVisual(username);
+                        this.value = '';
+                        errorMsg.classList.add('hidden');
+                    } else {
+                        errorMsg.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        });
+    })();
+</script>
+```
+------------------------------
+
+path: templates\users\login.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .form-text, .help-block {
+        font-size: 10px !important;
+        color: #888 !important;
+        margin-top: 4px;
+    }
+    label {
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #aaa;
+        margin-bottom: 4px;
+    }
+</style>
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-white/10 p-8 rounded shadow-2xl">
+        <h2 class="text-2xl font-bold uppercase tracking-widest text-white mb-6 text-center">Вход</h2>
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-[10px] uppercase font-bold tracking-tight">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm">
+                Войти
+            </button>
+        </form>
+        <div class="mt-6 text-center">
+            <a href="{% url 'users:signup' %}" class="text-[10px] uppercase font-bold tracking-widest text-gray-500 hover:text-white transition-colors">
+                Нет аккаунта? Регистрация
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: templates\users\signup.html
+```
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .form-text, .help-block, .help-text {
+        font-size: 10px !important;
+        color: #888 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 4px;
+    }
+    ul {
+        font-size: 10px !important;
+        color: #888 !important;
+        padding-left: 1rem;
+        margin-top: 4px;
+    }
+    li {
+        list-style-type: disc;
+    }
+    label {
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #aaa;
+        margin-bottom: 4px;
+    }
+</style>
+<div class="min-h-screen flex items-center justify-center p-4 bg-black">
+    <div class="w-full max-w-md bg-[#111] border border-white/10 p-8 rounded shadow-2xl">
+        <h2 class="text-2xl font-bold uppercase tracking-widest text-white mb-6 text-center">Регистрация</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-500">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="text-[9px] text-gray-600 uppercase leading-tight">{{ field.help_text|safe }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-[10px] uppercase font-bold tracking-tight">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors text-sm mt-6">
+                Зарегистрироваться
+            </button>
+        </form>
+         <div class="mt-6 text-center">
+            <a href="{% url 'users:login' %}" class="text-[10px] uppercase font-bold tracking-widest text-gray-500 hover:text-white transition-colors">
+                Уже есть аккаунт? Вход
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+------------------------------
+
+path: users\admin.py
+```
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'is_staff')
+    search_fields = ('username', 'email')
+    list_filter = ('role', 'is_staff', 'is_active')
+    fieldsets = UserAdmin.fieldsets + (
+        ('Дополнительная информация', {'fields': ('role',)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ('Дополнительная информация', {'fields': ('role',)}),
+    )
+```
+------------------------------
+
+path: users\apps.py
+```
+from django.apps import AppConfig
+class UsersConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'users'
+```
+------------------------------
+
+path: users\forms.py
+```
+from django import forms
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm
+from .models import CustomUser
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('username', 'email', 'role')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in self.fields:
+            self.fields[field_name].widget.attrs.update({
+                'class': 'w-full bg-white text-black border border-gray-300 rounded-sm p-3 focus:outline-none focus:border-white focus:ring-2 focus:ring-gray-500 placeholder-gray-500 text-sm font-bold',
+                'placeholder': self.fields[field_name].label
+            })
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = UserChangeForm.Meta.fields
+class UserLoginForm(AuthenticationForm):
+    username = forms.CharField(widget=forms.TextInput(attrs={
+        'class': 'w-full bg-white text-black border border-gray-300 rounded-sm p-3 focus:outline-none focus:border-white focus:ring-2 focus:ring-gray-500 placeholder-gray-500 text-sm font-bold',
+        'placeholder': 'Имя пользователя'
+    }))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'w-full bg-white text-black border border-gray-300 rounded-sm p-3 focus:outline-none focus:border-white focus:ring-2 focus:ring-gray-500 placeholder-gray-500 text-sm font-bold',
+        'placeholder': 'Пароль'
+    }))
+
+```
+------------------------------
+
+path: users\models.py
+```
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+class CustomUser(AbstractUser):
+    class Role(models.TextChoices):
+        PHOTOGRAPHER = 'PHOTOGRAPHER', 'Photographer'
+        CLIENT = 'CLIENT', 'Client'
+    role = models.CharField(max_length=50, choices=Role.choices)
+```
+------------------------------
+
+path: users\urls.py
+```
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from . import views
+app_name = 'users'
+urlpatterns = [
+    path('signup/', views.SignUpView.as_view(), name='signup'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='landing'), name='logout'),
+]
+```
+------------------------------
+
+path: users\views.py
+```
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+from .forms import CustomUserCreationForm, UserLoginForm
+class SignUpView(CreateView):
+    form_class = CustomUserCreationForm
+    success_url = reverse_lazy('users:login')
+    template_name = 'users/signup.html'
+class CustomLoginView(LoginView):
+    form_class = UserLoginForm
+    template_name = 'users/login.html'
+```
+------------------------------
+
+path: users\__init__.py
+```
+
+```
+------------------------------
+
+path: users\migrations\0001_initial.py
+```
+import django.contrib.auth.models
+import django.contrib.auth.validators
+import django.utils.timezone
+from django.db import migrations, models
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = [
+        ('auth', '0012_alter_user_first_name_max_length'),
+    ]
+    operations = [
+        migrations.CreateModel(
+            name='CustomUser',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('password', models.CharField(max_length=128, verbose_name='password')),
+                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
+                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()], verbose_name='username')),
+                ('first_name', models.CharField(blank=True, max_length=150, verbose_name='first name')),
+                ('last_name', models.CharField(blank=True, max_length=150, verbose_name='last name')),
+                ('email', models.EmailField(blank=True, max_length=254, verbose_name='email address')),
+                ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
+                ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
+                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
+                ('role', models.CharField(choices=[('PHOTOGRAPHER', 'Photographer'), ('CLIENT', 'Client')], max_length=50)),
+                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
+                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+    ]
+
+```
+------------------------------
+
+path: users\migrations\__init__.py
+```
+
+```
+------------------------------
+

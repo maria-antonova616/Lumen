@@ -71,7 +71,7 @@
                                src="{% if photo.thumbnail %}{{ photo.thumbnail.url }}{% else %}{{ photo.image.url }}{% endif %}" 
                                class="w-full h-full object-cover transition-transform duration-500 {% if is_owner %}group-hover:scale-105{% endif %}" 
                                loading="lazy"
-                               onclick="openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}', {% if state.liked_by_me %}true{% else %}false{% endif %})"
+                               onclick="if(window.innerWidth < 768) setSidebarState(true); openModal('{{ photo.id }}', '{{ photo.image.url }}', '{{ photo.sequence_number }}', {% if state.liked_by_me %}true{% else %}false{% endif %})"
                            />
                            {% if is_owner %}
                            <div class="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -132,7 +132,7 @@
                 </button>
                 <img id="modal-img" src="" class="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300" onclick="event.stopPropagation();">
             </div>
-            <div id="modal-sidebar" class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-0 md:p-8 flex flex-col shrink-0 h-auto max-h-[85vh] md:max-h-full overflow-y-auto custom-scrollbar rounded-t-2xl md:rounded-t-none transition-all duration-500 ease-in-out relative z-10">
+            <div id="modal-sidebar" class="w-full md:w-80 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] p-0 md:p-8 flex flex-col shrink-0 h-auto max-h-[40vh] md:max-h-full overflow-y-auto custom-scrollbar rounded-t-2xl md:rounded-t-none transition-all duration-500 ease-in-out relative z-10">
                 <div class="w-full md:hidden h-10 flex items-center justify-center cursor-pointer group shrink-0" id="sidebar-toggle-area">
                     <div class="w-12 h-1 bg-white/20 rounded-full group-hover:bg-white/40 transition-colors"></div>
                 </div>
@@ -149,8 +149,7 @@
                     <div id="photographer-note-container" class="pb-5 border-b border-white/5 hidden">
                         <h3 class="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 mb-2">Примечание автора</h3>
                         {% if is_owner %}
-                            <textarea id="modal-note" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-[11px] text-white focus:outline-none focus:border-white transition-colors h-20 resize-none placeholder-gray-700" placeholder="Заметка..."></textarea>
-                            <button onclick="saveNote()" class="mt-2 text-[9px] font-bold uppercase text-gray-500 hover:text-white transition-colors flex items-center gap-1.5"><i data-lucide="save" class="w-3 h-3"></i> Обновить</button>
+                            <textarea id="modal-note" onblur="saveNote()" class="w-full bg-[#111] border border-[#222] rounded-sm p-3 text-[11px] text-white focus:outline-none focus:border-white transition-colors h-20 resize-none placeholder-gray-700" placeholder="Заметка..."></textarea>
                         {% else %}
                             <p id="modal-note-display" class="text-[11px] text-blue-400 italic bg-blue-400/5 p-3 rounded border border-blue-400/10 leading-relaxed"></p>
                         {% endif %}
@@ -524,7 +523,7 @@
 
     function setSidebarState(isMaximized) {
         if (isMaximized) {
-            sidebar.style.maxHeight = '85vh';
+            sidebar.style.maxHeight = '40vh';
             sidebarContent.style.opacity = '1';
             sidebarContent.style.pointerEvents = 'auto';
         } else {
@@ -562,9 +561,6 @@
 
     const originalOpenModal = openModal;
     window.openModal = function(id, url, seq, isLiked) {
-        if (window.innerWidth < 768) {
-            setSidebarState(true);
-        }
         originalOpenModal(id, url, seq, isLiked);
     };
 </script>
